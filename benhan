@@ -1,0 +1,2886 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VN-EMR | Hệ thống Bệnh án Điện tử Mô phỏng Lâm sàng</title>
+  <!-- Tải Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tải phông chữ Inter hỗ trợ tiếng Việt đầy đủ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+          colors: {
+            his: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              200: '#bae0fd',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+              800: '#0c4a6e',
+              900: '#082f49',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #f1f5f9;
+      color: #0f172a;
+    }
+    /* Thanh cuộn tinh gọn cho giao diện HIS */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    /* Hiệu ứng trượt ngăn kéo hội chẩn */
+    .drawer-transition {
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+    .animate-pulse-dot {
+      animation: pulseDot 1.6s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="h-screen overflow-hidden flex flex-col bg-slate-100 text-slate-800 antialiased">
+
+  <!-- ===================================================================== -->
+  <!-- THANH TIÊU ĐỀ HỆ THỐNG (TOP BAR HIS)                                  -->
+  <!-- ===================================================================== -->
+  <header class="h-14 bg-his-900 text-white flex items-center justify-between px-3 sm:px-5 shadow-md z-30 shrink-0">
+    <div class="flex items-center gap-2.5 min-w-0">
+      <!-- Nút mở danh sách bệnh nhân trên thiết bị di động/máy tính bảng -->
+      <button id="btnToggleSidebar" type="button" class="lg:hidden p-2 rounded-lg hover:bg-his-800 text-sky-100 focus:outline-none" aria-label="Mở danh sách bệnh nhân">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+      <!-- Biểu tượng y tế -->
+      <div class="w-8 h-8 rounded-lg bg-sky-500/20 border border-sky-400/40 flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5 text-sky-300" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+        </svg>
+      </div>
+      <div class="truncate">
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-sm sm:text-base tracking-tight">VN-EMR</span>
+          <span class="hidden sm:inline-block text-[11px] font-medium px-2 py-0.5 rounded-full bg-sky-500/25 text-sky-200 border border-sky-400/30">Bệnh án Điện tử Mô phỏng</span>
+        </div>
+        <p class="hidden md:block text-[11px] text-sky-200/80 leading-tight">Hệ thống Đào tạo Lâm sàng Chuẩn Bộ Y tế • Tích hợp AI</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+      <!-- Nút khôi phục dữ liệu mẫu -->
+      <button id="btnResetDemo" type="button" title="Khôi phục 3 ca bệnh mẫu ban đầu" class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-sky-100 hover:bg-his-800 border border-sky-700/70 transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        Đặt lại mẫu
+      </button>
+
+      <!-- Nút mở ngăn kéo Trợ giúp / Hội chẩn AI luôn hiển thị nổi bật -->
+      <button id="btnOpenConsult" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold bg-amber-400 hover:bg-amber-300 text-slate-900 shadow transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
+        </svg>
+        <span>Trợ giúp / Hội chẩn AI</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ===================================================================== -->
+  <!-- KHUNG LÀM VIỆC CHÍNH: SIDEBAR TRÁI + KHÔNG GIAN BỆNH ÁN               -->
+  <!-- ===================================================================== -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- Lớp phủ nền tối khi mở sidebar trên mobile -->
+    <div id="sidebarBackdrop" class="hidden fixed inset-0 bg-slate-900/40 z-30 lg:hidden"></div>
+
+    <!-- =================================================================== -->
+    <!-- SIDEBAR TRÁI: DANH SÁCH BỆNH NHÂN TẠI KHOA                          -->
+    <!-- =================================================================== -->
+    <aside id="patientSidebar" class="fixed lg:static inset-y-0 left-0 w-80 sm:w-88 lg:w-80 xl:w-88 bg-white border-r border-slate-200 flex flex-col z-40 transform -translate-x-full lg:translate-x-0 drawer-transition shrink-0 h-full">
+      <!-- Đầu sidebar: Tiêu đề & Nút tiếp nhận ca AI -->
+      <div class="p-3.5 border-b border-slate-200 bg-slate-50/80 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-his-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            Bệnh nhân tại khoa (<span id="patientCount">0</span>)
+          </h2>
+          <button id="btnCloseSidebarMobile" type="button" class="lg:hidden p-1 text-slate-500 hover:text-slate-800 rounded-md">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <!-- Nút tạo ca lâm sàng bằng AI -->
+        <button id="btnNewAICase" type="button" class="w-full py-2.5 px-3 rounded-xl bg-his-600 hover:bg-his-700 text-white text-xs font-semibold shadow-sm flex items-center justify-center gap-1.5 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+          </svg>
+          Tiếp nhận ca bệnh mới (AI tạo ca)
+        </button>
+
+        <!-- Thanh tìm kiếm -->
+        <div class="relative">
+          <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
+          </svg>
+          <input id="searchPatientInput" type="text" placeholder="Tìm tên bệnh nhân, mã BA..." class="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-his-500 focus:border-his-500" />
+        </div>
+
+        <!-- Bộ lọc Khoa & Trạng thái -->
+        <div class="grid grid-cols-2 gap-2">
+          <select id="filterDept" class="text-xs py-1.5 px-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-his-500">
+            <option value="ALL">Tất cả khoa</option>
+          </select>
+          <select id="filterStatus" class="text-xs py-1.5 px-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-his-500">
+            <option value="ALL">Mọi trạng thái</option>
+            <option value="Cấp cứu">Cấp cứu</option>
+            <option value="Nặng">Nặng</option>
+            <option value="Đang theo dõi">Đang theo dõi</option>
+            <option value="Ổn định">Ổn định</option>
+            <option value="Đã xuất viện">Đã xuất viện</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Danh sách thẻ bệnh nhân -->
+      <div id="patientListContainer" class="flex-1 overflow-y-auto p-2.5 space-y-2 bg-slate-50/40">
+        <!-- Render bằng JS -->
+      </div>
+    </aside>
+
+    <!-- =================================================================== -->
+    <!-- KHÔNG GIAN LÀM VIỆC CHÍNH CỦA HỒ SƠ BỆNH ÁN                         -->
+    <!-- =================================================================== -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-100">
+      <!-- Dải thông tin tóm tắt bệnh nhân + Sinh hiệu -->
+      <section id="patientBannerSection" class="bg-white border-b border-slate-200 px-3 sm:px-5 py-3 shrink-0 shadow-xs">
+        <!-- Render bằng JS -->
+      </section>
+
+      <!-- Thanh điều hướng 4 Tab chức năng -->
+      <nav class="bg-white border-b border-slate-200 px-3 sm:px-5 flex items-center gap-1 overflow-x-auto shrink-0" aria-label="Phân hệ bệnh án">
+        <button data-tab="record" class="emr-tab-btn whitespace-nowrap px-3.5 py-2.5 text-xs sm:text-sm font-semibold border-b-2 transition flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          1. Hành chính & Bệnh án
+        </button>
+        <button data-tab="labs" class="emr-tab-btn whitespace-nowrap px-3.5 py-2.5 text-xs sm:text-sm font-semibold border-b-2 transition flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+          2. Cận lâm sàng (BHYT/Thu phí)
+        </button>
+        <button data-tab="treatment" class="emr-tab-btn whitespace-nowrap px-3.5 py-2.5 text-xs sm:text-sm font-semibold border-b-2 transition flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+          3. Tờ điều trị & Y lệnh
+        </button>
+        <button data-tab="billing" class="emr-tab-btn whitespace-nowrap px-3.5 py-2.5 text-xs sm:text-sm font-semibold border-b-2 transition flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          4. Tổng hợp chi phí
+        </button>
+      </nav>
+
+      <!-- Vùng nội dung của Tab đang chọn -->
+      <div id="tabContentArea" class="flex-1 overflow-y-auto p-3 sm:p-5">
+        <!-- Render bằng JS -->
+      </div>
+    </main>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- NGĂN KÉO TRƯỢT PHẢI: TRỢ GIÚP / HỘI CHẨN BÁC SĨ CỐ VẤN AI             -->
+  <!-- ===================================================================== -->
+  <div id="consultBackdrop" class="hidden fixed inset-0 bg-slate-900/35 z-40"></div>
+  <aside id="consultDrawer" class="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col transform translate-x-full drawer-transition">
+    <div class="p-4 bg-his-900 text-white flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-amber-400/20 border border-amber-300/40 flex items-center justify-center">
+          <svg class="w-5 h-5 text-amber-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
+          </svg>
+        </div>
+        <div>
+          <h3 class="font-bold text-sm">Bác sĩ Cố vấn & Hội chẩn AI</h3>
+          <p id="consultPatientSubtitle" class="text-[11px] text-sky-200">Đang xem hồ sơ bệnh nhân...</p>
+        </div>
+      </div>
+      <button id="btnCloseConsult" type="button" class="p-1.5 rounded-lg hover:bg-his-800 text-sky-200">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- 3 Nút gợi ý phân cấp -->
+    <div class="p-3 bg-slate-50 border-b border-slate-200 space-y-2 shrink-0">
+      <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Gợi ý phân cấp (không lộ đáp án sớm):</p>
+      <div class="grid grid-cols-1 gap-1.5">
+        <button data-hint="1" class="btn-tiered-hint text-left px-3 py-2 rounded-lg bg-white hover:bg-sky-50 border border-slate-200 hover:border-sky-300 text-xs font-medium text-slate-700 flex items-center gap-2 transition">
+          <span class="w-5 h-5 rounded-full bg-amber-100 text-amber-700 font-bold text-[11px] flex items-center justify-center shrink-0">1</span>
+          <span>Gợi ý định hướng & Dấu hiệu báo động</span>
+        </button>
+        <button data-hint="2" class="btn-tiered-hint text-left px-3 py-2 rounded-lg bg-white hover:bg-sky-50 border border-slate-200 hover:border-sky-300 text-xs font-medium text-slate-700 flex items-center gap-2 transition">
+          <span class="w-5 h-5 rounded-full bg-sky-100 text-sky-700 font-bold text-[11px] flex items-center justify-center shrink-0">2</span>
+          <span>Gợi ý Cận lâm sàng cốt lõi & BHYT</span>
+        </button>
+        <button data-hint="3" class="btn-tiered-hint text-left px-3 py-2 rounded-lg bg-white hover:bg-sky-50 border border-slate-200 hover:border-sky-300 text-xs font-medium text-slate-700 flex items-center gap-2 transition">
+          <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[11px] flex items-center justify-center shrink-0">3</span>
+          <span>Gợi ý Hướng xử trí & Phác đồ chuẩn</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Khu vực lịch sử hội thoại hội chẩn -->
+    <div id="consultChatMessages" class="flex-1 overflow-y-auto p-3.5 space-y-3 bg-slate-50/50">
+      <!-- Render bằng JS -->
+    </div>
+
+    <!-- Ô nhập câu hỏi trực tiếp -->
+    <form id="consultChatForm" class="p-3 bg-white border-t border-slate-200 flex gap-2 shrink-0">
+      <input id="consultChatInput" type="text" placeholder="Hỏi Bác sĩ Cố vấn về ca bệnh này..." class="flex-1 text-xs sm:text-sm px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-his-500" />
+      <button type="submit" class="px-3.5 py-2 rounded-xl bg-his-600 hover:bg-his-700 text-white text-xs font-semibold shrink-0 transition">
+        Gửi
+      </button>
+    </form>
+  </aside>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL TẠO CA LÂM SÀNG MỚI BẰNG AI                                     -->
+  <!-- ===================================================================== -->
+  <div id="modalNewCase" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden">
+      <div class="px-5 py-4 bg-his-900 text-white flex items-center justify-between">
+        <div>
+          <h3 class="font-bold text-base">Tiếp nhận ca bệnh mới (AI)</h3>
+          <p class="text-xs text-sky-200">Khởi tạo tình huống lâm sàng thực tế tại Việt Nam</p>
+        </div>
+        <button id="btnCloseNewCaseModal" type="button" class="text-sky-200 hover:text-white p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="p-5 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Chuyên khoa tiếp nhận</label>
+          <select id="newCaseSpecialty" class="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-his-500">
+            <option value="Nội tổng quát">Nội tổng quát</option>
+            <option value="Nội Tim mạch">Nội Tim mạch</option>
+            <option value="Nội Hô hấp">Nội Hô hấp</option>
+            <option value="Nội Tiêu hóa">Nội Tiêu hóa</option>
+            <option value="Ngoại tổng quát">Ngoại tổng quát / Ngoại Tiêu hóa</option>
+            <option value="Cấp cứu">Khoa Cấp cứu</option>
+            <option value="Sản phụ khoa">Sản phụ khoa</option>
+            <option value="Nhi khoa">Nhi khoa</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Độ khó lâm sàng</label>
+          <div class="grid grid-cols-3 gap-2">
+            <label class="cursor-pointer">
+              <input type="radio" name="newCaseDifficulty" value="Cơ bản" class="peer hidden" />
+              <div class="text-center py-2 px-2 rounded-xl border border-slate-300 text-xs font-medium peer-checked:border-his-600 peer-checked:bg-his-50 peer-checked:text-his-800 transition">Cơ bản</div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="newCaseDifficulty" value="Trung bình" class="peer hidden" checked />
+              <div class="text-center py-2 px-2 rounded-xl border border-slate-300 text-xs font-medium peer-checked:border-his-600 peer-checked:bg-his-50 peer-checked:text-his-800 transition">Trung bình</div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="newCaseDifficulty" value="Khó / Nhiều bệnh nền" class="peer hidden" />
+              <div class="text-center py-2 px-2 rounded-xl border border-slate-300 text-xs font-medium peer-checked:border-his-600 peer-checked:bg-his-50 peer-checked:text-his-800 transition">Khó / Đa bệnh</div>
+            </label>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Gợi ý chủ đề (tùy chọn)</label>
+          <input id="newCaseTopic" type="text" placeholder="VD: Đau ngực cấp, Sốt xuất huyết, Viêm tụy cấp... (để trống để ngẫu nhiên)" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-his-500" />
+        </div>
+        <div class="pt-2 flex justify-end gap-2">
+          <button id="btnCancelNewCase" type="button" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">Hủy</button>
+          <button id="btnConfirmCreateCase" type="button" class="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-his-600 hover:bg-his-700 shadow transition flex items-center gap-1.5">
+            <span>Khởi tạo hồ sơ bệnh án</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL CHUNG: TỔNG KẾT ĐÁNH GIÁ / XÁC NHẬN / NHẬN XÉT AI               -->
+  <!-- ===================================================================== -->
+  <div id="genericModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[88vh] flex flex-col border border-slate-200 overflow-hidden">
+      <div class="px-5 py-4 bg-his-900 text-white flex items-center justify-between shrink-0">
+        <h3 id="genericModalTitle" class="font-bold text-base">Thông báo</h3>
+        <button id="btnCloseGenericModal" type="button" class="text-sky-200 hover:text-white p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="genericModalBody" class="p-5 overflow-y-auto text-sm text-slate-700 space-y-4">
+        <!-- Nội dung động -->
+      </div>
+      <div id="genericModalFooter" class="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-end gap-2 shrink-0">
+        <!-- Nút hành động động -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- LỚP PHỦ LOADING TOÀN MÀN HÌNH KHI GỌI AI                              -->
+  <!-- ===================================================================== -->
+  <div id="loadingOverlay" class="hidden fixed inset-0 z-50 bg-slate-900/45 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full text-center space-y-3 border border-slate-200">
+      <div class="w-12 h-12 rounded-full border-4 border-sky-100 border-t-his-600 animate-spin mx-auto"></div>
+      <p id="loadingMessage" class="text-sm font-semibold text-slate-800">Đang xử lý dữ liệu lâm sàng...</p>
+      <p class="text-xs text-slate-500">Hệ thống AI đang phân tích ngữ cảnh bệnh án và tiêu chuẩn Bộ Y tế.</p>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- HỘP THÔNG BÁO TOAST GÓC DƯỚI PHẢI                                     -->
+  <!-- ===================================================================== -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2 max-w-sm w-full pointer-events-none"></div>
+
+  <!-- ===================================================================== -->
+  <!-- MÃ NGUỒN JAVASCRIPT ỨNG DỤNG VN-EMR                                   -->
+  <!-- ===================================================================== -->
+  <script>
+    /*************************************************************************
+     * 1. CẤU HÌNH API GEMINI & TIỆN ÍCH XỬ LÝ MẠNG / JSON AN TOÀN
+     *************************************************************************/
+    const GEMINI_API_KEY = ""; // Môi trường Canvas tự động cung cấp khóa API
+    const GEMINI_MODEL = "gemini-3-flash-preview";
+    const STORAGE_KEY = "vn_emr_simulator_state_v1";
+
+    /**
+     * Gọi Gemini API kèm cơ chế tự động thử lại (exponential backoff) khi nghẽn mạng.
+     * @param {Object} options - systemPrompt, userPrompt, expectJson, temperature
+     * @returns {Promise<string|Object>}
+     */
+    async function callGeminiAPI({ systemPrompt, userPrompt, expectJson = false, temperature = 0.4 }) {
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+      const payload = {
+        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        generationConfig: {
+          temperature: temperature,
+          ...(expectJson ? { responseMimeType: "application/json" } : {})
+        }
+      };
+
+      const delays = [1000, 2000, 4000];
+      let lastError = null;
+
+      for (let attempt = 0; attempt <= delays.length; attempt++) {
+        try {
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) {
+            const errText = await response.text().catch(() => "");
+            throw new Error(`HTTP ${response.status}: ${errText.slice(0, 160)}`);
+          }
+
+          const data = await response.json();
+          const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (!rawText) {
+            throw new Error("AI không trả về nội dung hợp lệ.");
+          }
+
+          if (expectJson) {
+            return extractSafeJson(rawText);
+          }
+          return rawText;
+        } catch (err) {
+          lastError = err;
+          if (attempt < delays.length) {
+            await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+          }
+        }
+      }
+      throw lastError || new Error("Không thể kết nối tới máy chủ AI.");
+    }
+
+    /**
+     * Trích xuất và phân tích JSON an toàn (loại bỏ markdown code fence nếu có).
+     */
+    function extractSafeJson(rawText) {
+      let cleaned = rawText.trim();
+      cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+      try {
+        return JSON.parse(cleaned);
+      } catch (e) {
+        // Thử tìm khối JSON đầu tiên bằng dấu ngoặc nhọn/vuông
+        const firstBrace = cleaned.indexOf("{");
+        const lastBrace = cleaned.lastIndexOf("}");
+        if (firstBrace !== -1 && lastBrace > firstBrace) {
+          return JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
+        }
+        throw new Error("Dữ liệu JSON trả về từ AI không đúng định dạng.");
+      }
+    }
+
+    /*************************************************************************
+     * 2. DANH MỤC CẬN LÂM SÀNG CHUẨN BỆNH VIỆN VIỆT NAM (BHYT & THU PHÍ)
+     *************************************************************************/
+    const LAB_CATALOG = [
+      // HUYẾT HỌC
+      { id: "HH01", group: "Huyết học", name: "Tổng phân tích tế bào máu ngoại vi (Công thức máu)", bhytEligible: true, priceBhyt: 42900, priceService: 85000, type: "lab" },
+      { id: "HH02", group: "Huyết học", name: "Đông máu cơ bản (PT, aPTT, INR, Fibrinogen)", bhytEligible: true, priceBhyt: 118000, priceService: 220000, type: "lab" },
+      { id: "HH03", group: "Huyết học", name: "Định nhóm máu hệ ABO, Rh(D)", bhytEligible: true, priceBhyt: 65000, priceService: 120000, type: "lab" },
+      { id: "HH04", group: "Huyết học", name: "D-Dimer định lượng", bhytEligible: true, priceBhyt: 195000, priceService: 350000, type: "lab" },
+      { id: "HH05", group: "Huyết học", name: "Tốc độ máu lắng (VS)", bhytEligible: true, priceBhyt: 28000, priceService: 55000, type: "lab" },
+
+      // SINH HÓA MÁU
+      { id: "SH01", group: "Sinh hóa máu", name: "Định lượng Glucose máu", bhytEligible: true, priceBhyt: 21500, priceService: 45000, type: "lab" },
+      { id: "SH02", group: "Sinh hóa máu", name: "Định lượng HbA1c", bhytEligible: true, priceBhyt: 105000, priceService: 180000, type: "lab" },
+      { id: "SH03", group: "Sinh hóa máu", name: "Chức năng thận (Ure, Creatinin, eGFR)", bhytEligible: true, priceBhyt: 43000, priceService: 90000, type: "lab" },
+      { id: "SH04", group: "Sinh hóa máu", name: "Men gan (AST / GOT, ALT / GPT)", bhytEligible: true, priceBhyt: 43000, priceService: 90000, type: "lab" },
+      { id: "SH05", group: "Sinh hóa máu", name: "Bilirubin toàn phần & Bilirubin trực tiếp", bhytEligible: true, priceBhyt: 46000, priceService: 95000, type: "lab" },
+      { id: "SH06", group: "Sinh hóa máu", name: "GGT & Phosphatase kiềm (ALP)", bhytEligible: true, priceBhyt: 52000, priceService: 110000, type: "lab" },
+      { id: "SH07", group: "Sinh hóa máu", name: "Amylase & Lipase máu", bhytEligible: true, priceBhyt: 86000, priceService: 170000, type: "lab" },
+      { id: "SH08", group: "Sinh hóa máu", name: "Điện giải đồ (Na+, K+, Cl-)", bhytEligible: true, priceBhyt: 39000, priceService: 80000, type: "lab" },
+      { id: "SH09", group: "Sinh hóa máu", name: "Định lượng CRP (C-Reactive Protein)", bhytEligible: true, priceBhyt: 58000, priceService: 120000, type: "lab" },
+      { id: "SH10", group: "Sinh hóa máu", name: "Định lượng Procalcitonin (PCT)", bhytEligible: true, priceBhyt: 365000, priceService: 580000, type: "lab" },
+      { id: "SH11", group: "Sinh hóa máu", name: "Định lượng Troponin I / T siêu nhạy (hs-TnI/T)", bhytEligible: true, priceBhyt: 190000, priceService: 340000, type: "lab" },
+      { id: "SH12", group: "Sinh hóa máu", name: "Định lượng NT-proBNP", bhytEligible: true, priceBhyt: 285000, priceService: 490000, type: "lab" },
+      { id: "SH13", group: "Sinh hóa máu", name: "Khí máu động mạch (ABG)", bhytEligible: true, priceBhyt: 182000, priceService: 320000, type: "lab" },
+      { id: "SH14", group: "Sinh hóa máu", name: "Định lượng Lactate máu", bhytEligible: true, priceBhyt: 98000, priceService: 185000, type: "lab" },
+      { id: "SH15", group: "Sinh hóa máu", name: "Albumin & Protein toàn phần máu", bhytEligible: true, priceBhyt: 48000, priceService: 95000, type: "lab" },
+      { id: "SH16", group: "Sinh hóa máu", name: "Bộ mỡ máu (Cholesterol, Triglycerid, HDL, LDL)", bhytEligible: true, priceBhyt: 96000, priceService: 180000, type: "lab" },
+
+      // NƯỚC TIỂU & VI SINH
+      { id: "VS01", group: "Nước tiểu & Vi sinh", name: "Tổng phân tích nước tiểu (10 thông số)", bhytEligible: true, priceBhyt: 27400, priceService: 60000, type: "lab" },
+      { id: "VS02", group: "Nước tiểu & Vi sinh", name: "Cấy máu định danh vi khuẩn & Kháng sinh đồ (2 chai)", bhytEligible: true, priceBhyt: 380000, priceService: 650000, type: "lab" },
+      { id: "VS03", group: "Nước tiểu & Vi sinh", name: "Soi nhuộm Gram & Cấy đàm định danh, kháng sinh đồ", bhytEligible: true, priceBhyt: 245000, priceService: 420000, type: "lab" },
+      { id: "VS04", group: "Nước tiểu & Vi sinh", name: "Cấy nước tiểu định danh & Kháng sinh đồ", bhytEligible: true, priceBhyt: 215000, priceService: 380000, type: "lab" },
+      { id: "VS05", group: "Nước tiểu & Vi sinh", name: "Test nhanh kháng nguyên Cúm A/B hoặc SARS-CoV-2", bhytEligible: false, priceBhyt: 120000, priceService: 180000, type: "lab" },
+
+      // CHẨN ĐOÁN HÌNH ẢNH & THĂM DÒ CHỨC NĂNG
+      { id: "CD01", group: "Chẩn đoán hình ảnh & TDCN", name: "Chụp X-quang ngực thẳng kỹ thuật số", bhytEligible: true, priceBhyt: 65400, priceService: 140000, type: "imaging" },
+      { id: "CD02", group: "Chẩn đoán hình ảnh & TDCN", name: "Chụp X-quang bụng không sửa soạn (đứng)", bhytEligible: true, priceBhyt: 65400, priceService: 140000, type: "imaging" },
+      { id: "CD03", group: "Chẩn đoán hình ảnh & TDCN", name: "Siêu âm ổ bụng tổng quát (Gan mật, tụy, thận...)", bhytEligible: true, priceBhyt: 43900, priceService: 150000, type: "imaging" },
+      { id: "CD04", group: "Chẩn đoán hình ảnh & TDCN", name: "Siêu âm tim Doppler màu qua thành ngực", bhytEligible: true, priceBhyt: 222000, priceService: 420000, type: "imaging" },
+      { id: "CD05", group: "Chẩn đoán hình ảnh & TDCN", name: "Điện tâm đồ (ECG) 12 chuyển đạo", bhytEligible: true, priceBhyt: 41600, priceService: 95000, type: "imaging" },
+      { id: "CD06", group: "Chẩn đoán hình ảnh & TDCN", name: "Chụp CLVT (CT-Scan) ổ bụng có tiêm thuốc cản quang", bhytEligible: true, priceBhyt: 1250000, priceService: 2200000, type: "imaging" },
+      { id: "CD07", group: "Chẩn đoán hình ảnh & TDCN", name: "Chụp CLVT (CT-Scan) lồng ngực không cản quang", bhytEligible: true, priceBhyt: 690000, priceService: 1350000, type: "imaging" },
+      { id: "CD08", group: "Chẩn đoán hình ảnh & TDCN", name: "Nội soi thực quản - dạ dày - tá tràng chẩn đoán", bhytEligible: true, priceBhyt: 268000, priceService: 650000, type: "imaging" },
+      { id: "CD09", group: "Chẩn đoán hình ảnh & TDCN", name: "Chụp cộng hưởng từ đường mật tụy (MRCP)", bhytEligible: true, priceBhyt: 1736000, priceService: 3100000, type: "imaging" }
+    ];
+
+    /*************************************************************************
+     * 3. DANH MỤC THUỐC & DỊCH TRUYỀN THIẾT YẾU THEO THÔNG TƯ BỘ Y TẾ (~48)
+     *************************************************************************/
+    const DRUG_CATALOG = [
+      // KHÁNG SINH
+      { id: "KS01", group: "Kháng sinh", name: "Ceftriaxone 1g", unit: "Lọ", route: "Tiêm/Truyền TM", defaultUsage: "2 lọ pha 100ml NaCl 0.9% truyền TM XXX giọt/phút (1 lần/ngày)", bhytType: "BHYT", price: 28000 },
+      { id: "KS02", group: "Kháng sinh", name: "Cefoperazone + Sulbactam 2g", unit: "Lọ", route: "Truyền TM", defaultUsage: "1 lọ x 2 pha 100ml NaCl 0.9% truyền TM trong 30 phút (8h - 20h)", bhytType: "BHYT", price: 95000 },
+      { id: "KS03", group: "Kháng sinh", name: "Cefepime 1g", unit: "Lọ", route: "Truyền TM", defaultUsage: "2 lọ x 2 pha 100ml NaCl 0.9% truyền TM mỗi 12 giờ", bhytType: "BHYT có điều kiện", price: 112000 },
+      { id: "KS04", group: "Kháng sinh", name: "Piperacillin + Tazobactam 4.5g", unit: "Lọ", route: "Truyền TM", defaultUsage: "1 lọ x 3 pha 100ml NaCl 0.9% truyền TM trong 30 phút mỗi 8 giờ", bhytType: "BHYT có điều kiện", price: 148000 },
+      { id: "KS05", group: "Kháng sinh", name: "Meropenem 1g", unit: "Lọ", route: "Truyền TM", defaultUsage: "1 lọ x 3 pha 100ml NaCl 0.9% truyền TM mỗi 8 giờ (cần hội chẩn KS dự trữ)", bhytType: "BHYT có điều kiện", price: 235000 },
+      { id: "KS06", group: "Kháng sinh", name: "Amoxicillin + Acid clavulanic 1.2g", unit: "Lọ", route: "Tiêm/Truyền TM", defaultUsage: "1 lọ x 3 tiêm TM chậm mỗi 8 giờ", bhytType: "BHYT", price: 42000 },
+      { id: "KS07", group: "Kháng sinh", name: "Amoxicillin + Acid clavulanic 1g", unit: "Viên", route: "Uống", defaultUsage: "1 viên x 2 lần/ngày uống ngay trước ăn", bhytType: "BHYT", price: 14000 },
+      { id: "KS08", group: "Kháng sinh", name: "Levofloxacin 500mg/100ml", unit: "Chai", route: "Truyền TM", defaultUsage: "1 chai (500mg-750mg) truyền TM chậm XXX giọt/phút (1 lần/ngày)", bhytType: "BHYT", price: 68000 },
+      { id: "KS09", group: "Kháng sinh", name: "Ciprofloxacin 400mg/200ml", unit: "Chai", route: "Truyền TM", defaultUsage: "1 chai x 2 truyền TM chậm trong 60 phút mỗi 12 giờ", bhytType: "BHYT", price: 54000 },
+      { id: "KS10", group: "Kháng sinh", name: "Azithromycin 500mg", unit: "Viên", route: "Uống", defaultUsage: "1 viên uống 1 lần/ngày", bhytType: "BHYT", price: 18000 },
+      { id: "KS11", group: "Kháng sinh", name: "Clarithromycin 500mg", unit: "Viên", route: "Uống", defaultUsage: "1 viên x 2 lần/ngày uống sau ăn", bhytType: "BHYT", price: 15000 },
+      { id: "KS12", group: "Kháng sinh", name: "Metronidazole 500mg/100ml", unit: "Chai", route: "Truyền TM", defaultUsage: "1 chai x 3 truyền TM XXX giọt/phút mỗi 8 giờ", bhytType: "BHYT", price: 19500 },
+      { id: "KS13", group: "Kháng sinh", name: "Vancomycin 1g", unit: "Lọ", route: "Truyền TM", defaultUsage: "1 lọ x 2 pha 250ml NaCl 0.9% truyền TM chậm trong 90 phút mỗi 12 giờ", bhytType: "BHYT có điều kiện", price: 165000 },
+
+      // DỊCH TRUYỀN & ĐIỆN GIẢI
+      { id: "DT01", group: "Dịch truyền & Điện giải", name: "Natri Clorid 0.9% 500ml", unit: "Chai", route: "Truyền TM", defaultUsage: "Truyền TM XL giọt/phút", bhytType: "BHYT", price: 12500 },
+      { id: "DT02", group: "Dịch truyền & Điện giải", name: "Ringer Lactate 500ml", unit: "Chai", route: "Truyền TM", defaultUsage: "Truyền TM XL giọt/phút", bhytType: "BHYT", price: 14000 },
+      { id: "DT03", group: "Dịch truyền & Điện giải", name: "Glucose 5% 500ml", unit: "Chai", route: "Truyền TM", defaultUsage: "Truyền TM XXX giọt/phút", bhytType: "BHYT", price: 13500 },
+      { id: "DT04", group: "Dịch truyền & Điện giải", name: "Albumin người 20% 50ml", unit: "Chai", route: "Truyền TM", defaultUsage: "Truyền TM chậm XV-XX giọt/phút (chỉ định khi Albumin < 25g/L)", bhytType: "BHYT có điều kiện", price: 980000 },
+      { id: "DT05", group: "Dịch truyền & Điện giải", name: "Kali Clorid 10% 10ml (1g)", unit: "Ống", route: "Pha truyền TM", defaultUsage: "1 ống pha trong 500ml NaCl 0.9% truyền TM XXX giọt/phút (KHÔNG tiêm TM trực tiếp)", bhytType: "BHYT", price: 4500 },
+      { id: "DT06", group: "Dịch truyền & Điện giải", name: "Kali Clorid 600mg (Kaleorid)", unit: "Viên", route: "Uống", defaultUsage: "1 viên x 2 uống sau ăn", bhytType: "BHYT", price: 3200 },
+
+      // GIẢM ĐAU - HẠ SỐT - CHỐNG CO THẮT
+      { id: "GD01", group: "Giảm đau - Hạ sốt - Chống co thắt", name: "Paracetamol 1g/100ml", unit: "Chai", route: "Truyền TM", defaultUsage: "1 chai truyền TM trong 15 phút khi sốt >= 38.5°C hoặc đau (cách nhau >= 6 giờ)", bhytType: "BHYT", price: 38000 },
+      { id: "GD02", group: "Giảm đau - Hạ sốt - Chống co thắt", name: "Paracetamol 500mg", unit: "Viên", route: "Uống", defaultUsage: "1 viên uống khi sốt >= 38.5°C (tối đa 4 viên/ngày)", bhytType: "BHYT", price: 1200 },
+      { id: "GD03", group: "Giảm đau - Hạ sốt - Chống co thắt", name: "Drotaverine (No-Spa) 40mg/2ml", unit: "Ống", route: "Tiêm bắp/TM", defaultUsage: "1 ống x 2 tiêm bắp khi đau quặn", bhytType: "BHYT", price: 9500 },
+      { id: "GD04", group: "Giảm đau - Hạ sốt - Chống co thắt", name: "Hyoscine butylbromide 20mg/1ml", unit: "Ống", route: "Tiêm bắp/TM chậm", defaultUsage: "1 ống tiêm TM chậm khi đau co thắt", bhytType: "BHYT", price: 12000 },
+      { id: "GD05", group: "Giảm đau - Hạ sốt - Chống co thắt", name: "Tramadol 100mg/2ml", unit: "Ống", route: "Truyền TM/TB", defaultUsage: "1 ống pha 100ml NaCl 0.9% truyền TM chậm khi đau nhiều", bhytType: "BHYT", price: 18500 },
+
+      // TIM MẠCH - LỢI TIỂU - CHỐNG ĐÔNG - VẬN MẠCH
+      { id: "TM01", group: "Tim mạch - Lợi tiểu - Chống đông", name: "Furosemide 20mg/2ml", unit: "Ống", route: "Tiêm TM chậm", defaultUsage: "2 ống tiêm TM chậm (hoặc lặp lại mỗi 12h tùy đáp ứng nước tiểu)", bhytType: "BHYT", price: 4800 },
+      { id: "TM02", group: "Tim mạch - Lợi tiểu - Chống đông", name: "Furosemide 40mg", unit: "Viên", route: "Uống", defaultUsage: "1 viên uống buổi sáng", bhytType: "BHYT", price: 1500 },
+      { id: "TM03", group: "Tim mạch - Lợi tiểu - Chống đông", name: "Spironolactone 25mg", unit: "Viên", route: "Uống", defaultUsage: "1 viên uống buổi sáng", bhytType: "BHYT", price: 2800 },
+      { id: "TM04", group: "Tim mạch - Lợi tiểu - Chống đông", name: "Nitroglycerin 10mg/10ml", unit: "Ống", route: "Bơm tiêm điện", defaultUsage: "Pha bơm tiêm điện truyền TM liên tục chỉnh liều theo HA (10-50 mcg/phút)", bhytType: "BHYT", price: 45000 },
+      { id: "TM05", group: "Tim mạch - Lợi tiểu - Chống đông", name: "Enoxaparin 40mg/0.4ml", unit: "Bơm tiêm", route: "Tiêm dưới da", defaultUsage: "1 bơm tiêm dưới da vùng bụng 1 lần/ngày (dự phòng huyết khối)", bhytType: "BHYT", price: 96000 },
+      { id: "TM06", group: "Tim mạch - Lợi tiểu - Chống đông", name: "Aspirin 81mg", unit: "Viên", route: "Uống", defaultUsage: "1 viên uống sau ăn trưa", bhytType: "BHYT", price: 1500 },
+      { id: "TM07", group: "Tim mạch - Lợi tiểu - Chống đông", name: "Clopidogrel 75mg", unit: "Viên", route: "Uống", defaultUsage: "1 viên uống 1 lần/ngày", bhytType: "BHYT", price: 8500 },
+      { id: "TM08", group: "Tim mạch - Lợi tiểu - Chống đông", name: "Atorvastatin 20mg", unit: "Viên", route: "Uống", defaultUsage: "1 viên uống buổi tối", bhytType: "BHYT", price: 6500 },
+      { id: "TM09", group: "Tim mạch - Lợi tiểu - Chống đông", name: "Amlodipine 5mg", unit: "Viên", route: "Uống", defaultUsage: "1 viên uống buổi sáng", bhytType: "BHYT", price: 2200 },
+      { id: "TM10", group: "Tim mạch - Lợi tiểu - Chống đông", name: "Perindopril 5mg", unit: "Viên", route: "Uống", defaultUsage: "1 viên uống buổi sáng trước ăn", bhytType: "BHYT", price: 7800 },
+      { id: "TM11", group: "Tim mạch - Lợi tiểu - Chống đông", name: "Losartan 50mg", unit: "Viên", route: "Uống", defaultUsage: "1 viên uống buổi sáng", bhytType: "BHYT", price: 4500 },
+      { id: "TM12", group: "Tim mạch - Lợi tiểu - Chống đông", name: "Bisoprolol 2.5mg", unit: "Viên", route: "Uống", defaultUsage: "1 viên uống buổi sáng (thận trọng khi suy tim mất bù cấp)", bhytType: "BHYT", price: 4200 },
+      { id: "TM13", group: "Tim mạch - Lợi tiểu - Chống đông", name: "Empagliflozin 10mg", unit: "Viên", route: "Uống", defaultUsage: "1 viên uống buổi sáng", bhytType: "Thu phí", price: 29000 },
+      { id: "TM14", group: "Tim mạch - Lợi tiểu - Chống đông", name: "Noradrenaline 4mg/4ml", unit: "Ống", route: "Bơm tiêm điện", defaultUsage: "Pha bơm tiêm điện truyền TM trung tâm duy trì MAP >= 65 mmHg", bhytType: "BHYT", price: 32000 },
+
+      // TIÊU HÓA
+      { id: "TH01", group: "Tiêu hóa", name: "Esomeprazole 40mg (tiêm)", unit: "Lọ", route: "Tiêm TM chậm", defaultUsage: "1 lọ tiêm TM chậm 1 lần/ngày", bhytType: "BHYT", price: 52000 },
+      { id: "TH02", group: "Tiêu hóa", name: "Esomeprazole 40mg (uống)", unit: "Viên", route: "Uống", defaultUsage: "1 viên uống trước ăn sáng 30 phút", bhytType: "BHYT", price: 11000 },
+      { id: "TH03", group: "Tiêu hóa", name: "Pantoprazole 40mg (tiêm)", unit: "Lọ", route: "Tiêm TM chậm", defaultUsage: "1 lọ tiêm TM chậm mỗi sáng", bhytType: "BHYT", price: 44000 },
+      { id: "TH04", group: "Tiêu hóa", name: "Ondansetron 4mg/2ml", unit: "Ống", route: "Tiêm TM chậm", defaultUsage: "1 ống tiêm TM chậm khi nôn nhiều", bhytType: "BHYT", price: 14500 },
+      { id: "TH05", group: "Tiêu hóa", name: "Vitamin K1 10mg/1ml", unit: "Ống", route: "Tiêm bắp/TM chậm", defaultUsage: "1 ống tiêm bắp hoặc pha truyền TM chậm (khi rối loạn đông máu do tắc mật)", bhytType: "BHYT", price: 8500 },
+
+      // HÔ HẤP - CORTICOID
+      { id: "HHAP01", group: "Hô hấp - Corticoid", name: "Salbutamol + Ipratropium (Combivent 2.5ml)", unit: "Tép", route: "Khí dung", defaultUsage: "1 tép x 3 lần/ngày khí dung qua mặt nạ", bhytType: "BHYT", price: 19000 },
+      { id: "HHAP02", group: "Hô hấp - Corticoid", name: "Budesonide 0.5mg/2ml (Pulmicort)", unit: "Tép", route: "Khí dung", defaultUsage: "1 tép x 2 lần/ngày khí dung", bhytType: "BHYT", price: 26000 },
+      { id: "HHAP03", group: "Hô hấp - Corticoid", name: "Acetylcysteine 200mg", unit: "Gói", route: "Uống", defaultUsage: "1 gói x 3 lần/ngày pha nước uống long đàm", bhytType: "BHYT", price: 2800 },
+      { id: "HHAP04", group: "Hô hấp - Corticoid", name: "Methylprednisolone 40mg", unit: "Lọ", route: "Tiêm TM chậm", defaultUsage: "1 lọ tiêm TM chậm 1 lần/ngày buổi sáng", bhytType: "BHYT", price: 34000 },
+
+      // NỘI TIẾT - CHUYỂN HÓA
+      { id: "NT01", group: "Nội tiết - Chuyển hóa", name: "Insulin tác dụng nhanh (Actrapid/NovoRapid)", unit: "Đơn vị (UI)", route: "Tiêm dưới da", defaultUsage: "Tiêm dưới da trước 3 bữa ăn (theo phác đồ chỉnh liều đường huyết mao mạch)", bhytType: "BHYT", price: 3500 },
+      { id: "NT02", group: "Nội tiết - Chuyển hóa", name: "Insulin nền (Glargine / Lantus)", unit: "Đơn vị (UI)", route: "Tiêm dưới da", defaultUsage: "10-16 UI tiêm dưới da lúc 21h cố định mỗi ngày", bhytType: "BHYT", price: 4800 },
+      { id: "NT03", group: "Nội tiết - Chuyển hóa", name: "Metformin 850mg", unit: "Viên", route: "Uống", defaultUsage: "1 viên x 2 uống sau ăn (LƯU Ý: tạm ngưng khi nhiễm trùng nặng/giảm oxy/suy thận cấp)", bhytType: "BHYT", price: 2400 }
+    ];
+
+    /*************************************************************************
+     * 4. DỮ LIỆU 3 CA BỆNH MẪU THỰC TẾ CHUẨN LÂM SÀNG VIỆT NAM
+     *************************************************************************/
+    function getInitialSamplePatients() {
+      return [
+        {
+          id: "BA-261101",
+          name: "NGUYỄN VĂN HÙNG",
+          age: 62,
+          gender: "Nam",
+          occupation: "Nông dân (đã nghỉ)",
+          address: "Huyện Củ Chi, TP. Hồ Chí Minh",
+          department: "Ngoại Tiêu hóa",
+          bed: "P.304 - G.02",
+          admissionTime: "25/11/2026 06:30",
+          currentDay: 1,
+          insuranceType: "BHYT 80%",
+          bhytRate: 80,
+          bhytCard: "GD 4 79 2104829104",
+          status: "Nặng",
+          discharged: false,
+          admissionSnapshot: {
+            chiefComplaint: "Đau hạ sườn phải, sốt lạnh run và vàng da",
+            history: "Cách nhập viện 2 ngày, bệnh nhân xuất hiện đau âm ỉ liên tục vùng hạ sườn phải, có lúc quặn từng cơn lan lên vai phải, kèm buồn nôn và nôn ra dịch vàng 2 lần. Từ chiều hôm qua, bệnh nhân sốt cao 39.2°C kèm rét run từng cơn, người nhà thấy mắt và da bệnh nhân vàng rõ, nước tiểu sậm màu như nước trà đặc. Bệnh nhân không tự uống thuốc hạ sốt được do nôn, mệt nhiều nên nhập cấp cứu rồi chuyển khoa Ngoại Tiêu hóa.",
+            pastHistory: "Bản thân: Phát hiện sỏi túi mật nhỏ cách đây 3 năm qua siêu âm nhưng không điều trị định kỳ. Chưa ghi nhận tăng huyết áp, đái tháo đường. Dị ứng: Chưa ghi nhận dị ứng thuốc/thức ăn. Gia đình: Không bệnh lý đặc biệt.",
+            initialExam: "Tổng trạng: Bệnh nhân tỉnh, tiếp xúc được nhưng vẻ mặt nhiễm trùng, môi khô lưỡi dơ. Da và củng mạc mắt vàng rõ. Không xuất huyết dưới da.\nTim mạch: T1, T2 đều rõ, tần số 108 lần/phút, chưa nghe âm thổi.\nHô hấp: Lồng ngực cân đối, phổi trong không ran.\nTiêu hóa: Bụng mềm, ấn đau nhiều vùng hạ sườn phải, nghiệm pháp Murphy dương tính, phản ứng thành bụng nhẹ hạ sườn phải, không đề kháng toàn bụng. Gan mấp mé bờ sườn, ấn tức.\nThận - Tiết niệu: Chạm thận (-), nước tiểu sậm màu."
+          },
+          record: {
+            chiefComplaint: "Đau hạ sườn phải, sốt lạnh run và vàng da",
+            history: "Bệnh 2 ngày: đau hạ sườn phải tăng dần lan vai phải, buồn nôn, sau đó sốt cao 39.2°C kèm lạnh run và vàng da, tiểu sậm màu.",
+            pastHistory: "Sỏi túi mật phát hiện 3 năm trước chưa xử trí. Chưa ghi nhận dị ứng thuốc.",
+            exam: "Tỉnh, vẻ mặt nhiễm trùng, môi khô lưỡi dơ, vàng da - vàng mắt rõ. Bụng mềm, ấn đau nhiều hạ sườn phải, Murphy (+).",
+            summary: "",
+            prelimDiagnosis: "",
+            diffDiagnosis: "",
+            finalDiagnosis: "",
+            icd10: ""
+          },
+          hiddenTruth: {
+            actualDiagnosis: "Viêm đường mật cấp mức độ trung bình (Tokyo Guidelines 2018 độ II) do sỏi kẹt đoạn cuối ống mật chủ (sỏi 11mm), giãn đường mật trong và ngoài gan, kèm sỏi túi mật.",
+            keyLabs: "WBC 18.4 G/L (Neu 88%), CRP 168 mg/L, Procalcitonin 4.8 ng/mL, Bilirubin TP 112 µmol/L (TT 84 µmol/L), AST 145 U/L, ALT 172 U/L, GGT 480 U/L, ALP 340 U/L, INR 1.32, Amylase bình thường (78 U/L). Siêu âm/CT ổ bụng: Giãn ống mật chủ 14mm, sỏi cản quang đoạn cuối OMC kích thước 11mm, túi mật thành dày nhẹ có vài sỏi nhỏ 5-7mm.",
+            optimalManagement: "Nhịn ăn hoàn toàn, bù dịch điện giải tích cực (NaCl 0.9%/Ringer Lactate), kháng sinh phổ rộng tĩnh mạch phủ Gram âm đường ruột & kỵ khí (VD: Cefoperazone/Sulbactam hoặc Piperacillin/Tazobactam hoặc Ceftriaxone + Metronidazole), cấy máu trước kháng sinh, giảm đau hạ sốt/chống co thắt, Vitamin K1 nếu INR tăng, và LÊN KẾ HOẠCH dẫn lưu đường mật sớm (hội chẩn ERCP lấy sỏi/đặt stent mật). Nếu không dùng kháng sinh đúng phổ hoặc không chỉ định nhịn ăn/hội chẩn giải áp đường mật, bệnh nhân có nguy cơ tiến triển sốc nhiễm trùng đường mật (ngũ chứng Reynolds)."
+          },
+          vitalsHistory: [
+            { day: 1, time: "25/11/2026 06:30", hr: 108, bp: "105/65", temp: 39.1, rr: 22, spo2: 97, gcs: "15đ (Tỉnh, mệt)" }
+          ],
+          labOrders: [],
+          treatmentDays: [
+            {
+              day: 1,
+              dateTime: "25/11/2026 07:00",
+              vitals: { hr: 108, bp: "105/65", temp: 39.1, rr: 22, spo2: 97, gcs: "15đ (Tỉnh, mệt)" },
+              progression: "Bệnh nhân mới chuyển từ Cấp cứu lên khoa Ngoại Tiêu hóa. Còn đau nhiều hạ sườn phải (VAS 6/10), sốt 39.1°C, rét run, da vàng rõ, buồn nôn, chưa ăn uống gì từ tối qua. Chưa có y lệnh điều trị tại khoa.",
+              nursingNote: "Đã thiết lập 1 đường truyền tĩnh mạch ngoại biên kim 18G. Bệnh nhân tiểu 200ml nước tiểu sậm màu lúc 06:45.",
+              orders: null, // Chưa xác nhận y lệnh ngày 1
+              attendingFeedback: null
+            }
+          ],
+          draftOrder: {
+            careLevel: "Chăm sóc Cấp II",
+            diet: "Nhịn ăn hoàn toàn (chuẩn bị can thiệp/theo dõi ngoại khoa)",
+            monitoring: "Theo dõi mạch, huyết áp, nhiệt độ, SpO2, đau bụng mỗi 4 giờ; theo dõi lượng nước tiểu 24 giờ.",
+            procedures: "",
+            drugs: []
+          },
+          consultChat: [],
+          recordFeedback: null,
+          finalEvaluation: null
+        },
+
+        {
+          id: "BA-261102",
+          name: "TRẦN THỊ MAI",
+          age: 68,
+          gender: "Nữ",
+          occupation: "Nội trợ",
+          address: "Quận Bình Thạnh, TP. Hồ Chí Minh",
+          department: "Nội Tim mạch",
+          bed: "P.201 - G.05",
+          admissionTime: "25/11/2026 05:15",
+          currentDay: 1,
+          insuranceType: "BHYT 100%",
+          bhytRate: 100,
+          bhytCard: "HT 2 79 1958034412",
+          status: "Nặng",
+          discharged: false,
+          admissionSnapshot: {
+            chiefComplaint: "Khó thở tăng dần, phải ngồi để thở và phù 2 chân",
+            history: "Khoảng 1 tuần nay, bệnh nhân tự ngưng thuốc tim mạch vì hết thuốc và ăn mặn hơn bình thường (ăn dưa muối, kho quẹt). 4 ngày nay xuất hiện phù mềm hai cẳng chân tăng dần, tăng 3kg trong 1 tuần. Từ đêm qua bệnh nhân khó thở nhiều khi nằm đầu bằng, phải kê 3 gối ngồi ngủ, có cơn khó thở kịch phát về đêm kèm ho khan, mệt mỏi nhiều nên nhập viện.",
+            pastHistory: "Bản thân: Tăng huyết áp 12 năm, Suy tim phân suất tống máu giảm (EF 35% cách đây 6 tháng) do bệnh tim thiếu máu cục bộ. Đang uống Perindopril 5mg, Bisoprolol 2.5mg, Furosemide 40mg, Spironolactone 25mg, Aspirin 81mg, Atorvastatin 20mg nhưng bỏ thuốc 7 ngày nay. Không dị ứng thuốc.",
+            initialExam: "Tổng trạng: Tỉnh, lo lắng, tư thế nửa nằm nửa ngồi (Fowler). Tĩnh mạch cổ nổi ở tư thế 45 độ. Phù mềm trắng ấn lõm 2 chi dưới đến gối.\nTim mạch: Mỏm tim lệch trái khoang liên sườn VI đường nách trước, nhịp tim đều nhanh 112 lần/phút, có tiếng ngựa phi T3, huyết áp 155/92 mmHg.\nHô hấp: Thở nhanh nông 26 lần/phút, SpO2 91% khí trời, nghe nhiều ran ẩm nhỏ hạt ở 2 đáy phổi.\nTiêu hóa: Gan to dưới bờ sườn 2cm, ấn tức nhẹ, phản hồi gan - tĩnh mạch cổ (+)."
+          },
+          record: {
+            chiefComplaint: "Khó thở tăng dần, khó thở khi nằm và phù 2 chi dưới",
+            history: "Bỏ thuốc tim mạch 7 ngày và ăn mặn. 4 ngày nay phù 2 chân tăng dần, tăng 3kg, đêm qua khó thở kịch phát về đêm phải ngồi thở.",
+            pastHistory: "Tăng huyết áp 12 năm, Suy tim EF 35% do bệnh tim thiếu máu cục bộ. Không dị ứng thuốc.",
+            exam: "Tỉnh, tư thế nửa ngồi, SpO2 91% khí trời, TM cổ nổi (+), phù mềm 2 chi dưới ấn lõm. Ran ẩm 2 đáy phổi. Nhịp tim 112 l/p, T3 (+), HA 155/92 mmHg.",
+            summary: "",
+            prelimDiagnosis: "",
+            diffDiagnosis: "",
+            finalDiagnosis: "",
+            icd10: ""
+          },
+          hiddenTruth: {
+            actualDiagnosis: "Đợt cấp suy tim mất bù (Suy tim mạn EF giảm 33%, NYHA IV) kiểu hình Ẩm - Ấm (Wet-Warm), yếu tố thúc đẩy do bỏ thuốc và quá tải muối/dịch, trên nền Tăng huyết áp - Bệnh tim thiếu máu cục bộ.",
+            keyLabs: "NT-proBNP tăng rất cao 6.850 pg/mL, Troponin I hs tăng nhẹ ổn định 28 ng/L (không động học nhồi máu cơ tim cấp), Creatinin 118 µmol/L (eGFR 42 mL/phút), Kali máu 3.7 mmol/L, Na+ 134 mmol/L, Hb 118 g/L. ECG: Nhịp xoang nhanh 112 l/p, lớn thất trái, sóng Q cũ chuyển đạo trước ngực V1-V3, không ST chênh lên mới. X-quang ngực: Bóng tim to (chỉ số tim/ngực 0.62), sung huyết rốn phổi hai bên, đường Kerley B, tràn dịch màng phổi phải lượng ít. Siêu âm tim: Giảm động thành trước vách, EF 33%, PAPs 48 mmHg.",
+            optimalManagement: "Tư thế đầu cao Fowler, thở oxy cannula 3-4 L/phút duy trì SpO2 >= 94%, hạn chế dịch (<1-1.5 L/ngày) và ăn lạt (<2g muối/ngày). Lợi tiểu quai tĩnh mạch Furosemide (VD 40mg TM x 2 lần/ngày), theo dõi sát nước tiểu 24h và điện giải đồ (bổ sung Kali nếu hạ K+), có thể dùng giãn mạch Nitroglycerin nếu HA cao và khó thở nhiều. TRÁNH truyền dịch thừa (NaCl 0.9%), TRÁNH NSAID, tạm thận trọng/giảm liều hoặc không tăng liều chẹn beta (Bisoprolol) khi đang sung huyết phổi nặng; duy trì/tái khởi động thuốc nền suy tim khi hết sung huyết."
+          },
+          vitalsHistory: [
+            { day: 1, time: "25/11/2026 05:15", hr: 112, bp: "155/92", temp: 36.7, rr: 26, spo2: 91, gcs: "15đ (Tỉnh, khó thở)" }
+          ],
+          labOrders: [],
+          treatmentDays: [
+            {
+              day: 1,
+              dateTime: "25/11/2026 06:00",
+              vitals: { hr: 112, bp: "155/92", temp: 36.7, rr: 26, spo2: 91, gcs: "15đ (Tỉnh, khó thở)" },
+              progression: "Bệnh nhân nhập khoa Nội Tim mạch trong tình trạng khó thở phải nằm đầu cao, SpO2 91% khí trời, ran ẩm 2 đáy phổi, phù mềm 2 chi dưới đến gối, tĩnh mạch cổ nổi rõ. Cân nặng sáng nay 64kg (bình thường 61kg).",
+              nursingNote: "Đã cho bệnh nhân nằm đầu cao 45 độ, chờ y lệnh thở oxy và thuốc của bác sĩ.",
+              orders: null,
+              attendingFeedback: null
+            }
+          ],
+          draftOrder: {
+            careLevel: "Chăm sóc Cấp I",
+            diet: "Chế độ ăn lạt (<2g muối/ngày), hạn chế nước < 1.2 lít/ngày",
+            monitoring: "Theo dõi mạch, HA, nhịp thở, SpO2 mỗi 2-4 giờ; đo cân nặng mỗi sáng và theo dõi bilan xuất nhập (nước tiểu 24h).",
+            procedures: "Thở oxy qua gọng mũi (cannula) 3 lít/phút duy trì SpO2 >= 94%",
+            drugs: []
+          },
+          consultChat: [],
+          recordFeedback: null,
+          finalEvaluation: null
+        },
+
+        {
+          id: "BA-261103",
+          name: "LÊ MINH TUẤN",
+          age: 54,
+          gender: "Nam",
+          occupation: "Tài xế xe tải",
+          address: "TP. Thủ Đức, TP. Hồ Chí Minh",
+          department: "Nội Hô hấp",
+          bed: "P.402 - G.08",
+          admissionTime: "25/11/2026 07:10",
+          currentDay: 1,
+          insuranceType: "BHYT 80%",
+          bhytRate: 80,
+          bhytCard: "DN 4 79 2045198231",
+          status: "Đang theo dõi",
+          discharged: false,
+          admissionSnapshot: {
+            chiefComplaint: "Sốt cao, ho khạc đàm đục vàng và đau tức ngực phải khi hít sâu",
+            history: "3 ngày nay bệnh nhân sốt cao liên tục 38.8-39.3°C, mệt mỏi, ớn lạnh, kèm ho nhiều khạc đàm đặc màu vàng xanh. Từ hôm qua xuất hiện đau tức ngực bên phải tăng lên khi ho hoặc hít sâu, cảm giác hụt hơi khi đi lại trong nhà. Tự mua thuốc cảm tại nhà thuốc uống 2 ngày không giảm nên đến bệnh viện khám và nhập khoa Nội Hô hấp.",
+            pastHistory: "Bản thân: Đái tháo đường type 2 phát hiện 5 năm, đang uống Metformin 850mg x 2 viên/ngày nhưng kiểm soát đường huyết kém, hay quên tái khám. Hút thuốc lá 20 gói-năm. Không dị ứng thuốc.",
+            initialExam: "Tổng trạng: Tỉnh, tiếp xúc tốt, da niêm hồng, môi hơi khô. Không phù, hạch ngoại biên không sờ chạm.\nHô hấp: Thở nhanh 24 lần/phút, SpO2 93% khí trời, không co kéo cơ hô hấp phụ nhiều. Khám phổi thấy hội chứng đông đặc đáy phổi phải (rung thanh tăng, gõ đục nhẹ, rì rào phế nang giảm kèm nhiều ran nổ khu trú vùng đáy phổi phải).\nTim mạch: Nhịp tim đều 104 lần/phút, huyết áp 128/78 mmHg.\nTiêu hóa: Bụng mềm, không điểm đau khu trú."
+          },
+          record: {
+            chiefComplaint: "Sốt cao 3 ngày, ho khạc đàm đục vàng, đau ngực phải và khó thở nhẹ",
+            history: "3 ngày nay sốt cao 39°C, ho khạc đàm vàng xanh, đau ngực phải kiểu màng phổi, khó thở nhẹ khi gắng sức. Đã tự uống thuốc cảm không đỡ.",
+            pastHistory: "Đái tháo đường type 2 (5 năm, dùng Metformin 850mg x 2), hút thuốc lá 20 gói-năm. Không dị ứng thuốc.",
+            exam: "Tỉnh, sốt 38.9°C, nhịp thở 24 l/p, SpO2 93% khí trời. Hội chứng đông đặc và ran nổ nhiều vùng đáy phổi phải. Tim đều 104 l/p, HA 128/78 mmHg.",
+            summary: "",
+            prelimDiagnosis: "",
+            diffDiagnosis: "",
+            finalDiagnosis: "",
+            icd10: ""
+          },
+          hiddenTruth: {
+            actualDiagnosis: "Viêm phổi cộng đồng (CAP) thùy dưới phổi phải mức độ trung bình (CURB-65 = 1-2 điểm, nhập viện nội trú do SpO2 93% và bệnh nền ĐTĐ type 2 kiểm soát kém), tăng đường huyết phản ứng do nhiễm trùng.",
+            keyLabs: "WBC 16.8 G/L (Neu 84%), CRP 142 mg/L, Procalcitonin 1.9 ng/mL, Glucose máu bất kỳ 15.8 mmol/L (284 mg/dL), HbA1c 8.9%, Ure 7.8 mmol/L, Creatinin 94 µmol/L, Điện giải đồ bình thường (Na 136, K 4.1). X-quang ngực thẳng: Đám mờ đông đặc đồng nhất vùng đáy phổi phải, có hình ảnh phế quản đồ chứa khí, không tràn dịch màng phổi lượng nhiều. Nhuộm Gram/Cấy đàm: Song cầu Gram dương nghi Streptococcus pneumoniae (trả kết quả định danh sau 48h).",
+            optimalManagement: "Kháng sinh kinh nghiệm theo phác đồ CAP nhập viện nội trú không ICU (Bộ Y tế/IDSA): Beta-lactam tiêm (Ceftriaxone 2g TM/ngày hoặc Amoxicillin/Clavulanate 1.2g x 3 TM) KẾT HỢP Macrolide (Azithromycin 500mg uống/ngày hoặc Clarithromycin) HOẶC đơn trị Fluoroquinolone hô hấp (Levofloxacin 750mg/500mg TM/ngày). Thở oxy cannula 2 L/p nếu SpO2 < 94%, hạ sốt Paracetamol, long đàm Acetylcysteine, bù dịch vừa phải (NaCl 0.9%, tránh truyền Glucose khi đường huyết cao). Kiểm soát đường huyết nội viện bằng Insulin tiêm dưới da theo đường huyết mao mạch và TẠM NGƯNG Metformin trong giai đoạn nhiễm trùng cấp/giảm oxy máu."
+          },
+          vitalsHistory: [
+            { day: 1, time: "25/11/2026 07:10", hr: 104, bp: "128/78", temp: 38.9, rr: 24, spo2: 93, gcs: "15đ (Tỉnh, tiếp xúc tốt)" }
+          ],
+          labOrders: [],
+          treatmentDays: [
+            {
+              day: 1,
+              dateTime: "25/11/2026 07:30",
+              vitals: { hr: 104, bp: "128/78", temp: 38.9, rr: 24, spo2: 93, gcs: "15đ (Tỉnh, tiếp xúc tốt)" },
+              progression: "Bệnh nhân nhập khoa Nội Hô hấp. Sốt 38.9°C, ho từng cơn khạc đàm vàng đặc, đau tức nhẹ ngực phải khi ho, SpO2 93% khí trời, ran nổ rõ đáy phổi phải. Đường huyết mao mạch thử nhanh tại phòng khám là 15.6 mmol/L.",
+              nursingNote: "Đã hướng dẫn bệnh nhân tư thế dẫn lưu, chờ y lệnh xét nghiệm, kháng sinh và kiểm soát đường huyết.",
+              orders: null,
+              attendingFeedback: null
+            }
+          ],
+          draftOrder: {
+            careLevel: "Chăm sóc Cấp II",
+            diet: "Chế độ ăn bệnh lý Đái tháo đường (giảm tinh bột nhanh), uống đủ nước ấm",
+            monitoring: "Theo dõi mạch, HA, nhiệt độ, nhịp thở, SpO2 mỗi 6 giờ; thử đường huyết mao mạch 4 lần/ngày (trước 3 bữa ăn và 21h).",
+            procedures: "Thở oxy cannula 2 lít/phút nếu SpO2 < 94%",
+            drugs: []
+          },
+          consultChat: [],
+          recordFeedback: null,
+          finalEvaluation: null
+        }
+      ];
+    }
+
+    /*************************************************************************
+     * 5. QUẢN LÝ TRẠNG THÁI ỨNG DỤNG & LƯU TRỮ LOCALSTORAGE
+     *************************************************************************/
+    let appState = {
+      patients: [],
+      selectedPatientId: null,
+      activeTab: "record", // record | labs | treatment | billing
+      labCart: [], // [{ labId, paymentType: 'BHYT' | 'Thu phí' }]
+      labSearch: "",
+      labGroupFilter: "ALL",
+      drugSearch: "",
+      drugGroupFilter: "ALL"
+    };
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed.patients) && parsed.patients.length > 0) {
+            appState.patients = parsed.patients;
+            appState.selectedPatientId = parsed.selectedPatientId || parsed.patients[0].id;
+            appState.activeTab = parsed.activeTab || "record";
+            return;
+          }
+        }
+      } catch (e) {
+        // Nếu lỗi localStorage thì khởi tạo mẫu mới
+      }
+      appState.patients = getInitialSamplePatients();
+      appState.selectedPatientId = appState.patients[0].id;
+      appState.activeTab = "record";
+      saveState();
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          patients: appState.patients,
+          selectedPatientId: appState.selectedPatientId,
+          activeTab: appState.activeTab
+        }));
+      } catch (e) {
+        // Bỏ qua nếu hết dung lượng bộ nhớ cục bộ
+      }
+    }
+
+    function getCurrentPatient() {
+      return appState.patients.find(p => p.id === appState.selectedPatientId) || appState.patients[0];
+    }
+
+    /*************************************************************************
+     * 6. HÀM TIỆN ÍCH HIỂN THỊ (ĐỊNH DẠNG TIỀN, MÀU SINH HIỆU, TOAST, MODAL)
+     *************************************************************************/
+    function formatVND(amount) {
+      return new Intl.NumberFormat("vi-VN").format(Math.round(amount || 0)) + " đ";
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function formatMultiline(text) {
+      if (!text) return "";
+      return escapeHtml(text)
+        .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-slate-900">$1</strong>')
+        .replace(/\n/g, "<br>");
+    }
+
+    function getStatusBadgeClass(status) {
+      switch (status) {
+        case "Cấp cứu": return "bg-red-600 text-white";
+        case "Nặng": return "bg-rose-100 text-rose-800 border border-rose-200";
+        case "Đang theo dõi": return "bg-amber-100 text-amber-800 border border-amber-200";
+        case "Ổn định": return "bg-emerald-100 text-emerald-800 border border-emerald-200";
+        case "Đã xuất viện": return "bg-slate-200 text-slate-700 border border-slate-300";
+        default: return "bg-sky-100 text-sky-800 border border-sky-200";
+      }
+    }
+
+    /**
+     * Đánh giá cảnh báo màu sắc cho từng chỉ số sinh hiệu
+     */
+    function getVitalAlert(type, val) {
+      const num = parseFloat(val);
+      if (type === "hr") {
+        if (num >= 120 || num < 50) return "danger";
+        if (num > 100 || num < 60) return "warn";
+      } else if (type === "bp") {
+        const parts = String(val).split("/");
+        const sys = parseFloat(parts[0]);
+        const dia = parseFloat(parts[1]);
+        if (sys < 90 || sys >= 180 || dia >= 110) return "danger";
+        if (sys >= 140 || sys < 100 || dia >= 90) return "warn";
+      } else if (type === "temp") {
+        if (num >= 39.0 || num < 35.5) return "danger";
+        if (num >= 37.8 || num < 36.0) return "warn";
+      } else if (type === "rr") {
+        if (num >= 28 || num < 10) return "danger";
+        if (num >= 22 || num < 12) return "warn";
+      } else if (type === "spo2") {
+        if (num < 90) return "danger";
+        if (num < 95) return "warn";
+      }
+      return "normal";
+    }
+
+    function vitalBoxStyle(level) {
+      if (level === "danger") return "bg-red-50 border-red-300 text-red-800";
+      if (level === "warn") return "bg-amber-50 border-amber-300 text-amber-900";
+      return "bg-slate-50 border-slate-200 text-slate-800";
+    }
+
+    function showToast(message, type = "info") {
+      const container = document.getElementById("toastContainer");
+      const toast = document.createElement("div");
+      const styles = {
+        success: "bg-emerald-700 text-white border-emerald-800",
+        error: "bg-red-700 text-white border-red-800",
+        warn: "bg-amber-600 text-white border-amber-700",
+        info: "bg-his-800 text-white border-his-900"
+      };
+      toast.className = `pointer-events-auto px-4 py-3 rounded-xl shadow-lg border text-xs sm:text-sm font-medium flex items-center justify-between gap-2 transition-all ${styles[type] || styles.info}`;
+      toast.innerHTML = `<span>${escapeHtml(message)}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(8px)";
+        setTimeout(() => toast.remove(), 250);
+      }, 3400);
+    }
+
+    function showLoading(message) {
+      document.getElementById("loadingMessage").textContent = message || "Đang xử lý...";
+      document.getElementById("loadingOverlay").classList.remove("hidden");
+    }
+
+    function hideLoading() {
+      document.getElementById("loadingOverlay").classList.add("hidden");
+    }
+
+    function openGenericModal({ title, bodyHtml, footerHtml }) {
+      document.getElementById("genericModalTitle").textContent = title;
+      document.getElementById("genericModalBody").innerHTML = bodyHtml;
+      document.getElementById("genericModalFooter").innerHTML = footerHtml || `<button onclick="closeGenericModal()" class="px-4 py-2 rounded-xl bg-his-600 hover:bg-his-700 text-white text-xs font-semibold">Đóng</button>`;
+      document.getElementById("genericModal").classList.remove("hidden");
+    }
+
+    function closeGenericModal() {
+      document.getElementById("genericModal").classList.add("hidden");
+    }
+
+    /**
+     * Tính toán phân tách chi phí BHYT trả vs Bệnh nhân tự trả cho 1 khoản mục
+     */
+    function calcItemCost(unitPrice, qty, paymentType, patientBhytRate, isBhytEligible) {
+      const total = unitPrice * qty;
+      if (paymentType === "BHYT" && isBhytEligible && patientBhytRate > 0) {
+        const bhytPays = Math.round(total * (patientBhytRate / 100));
+        const patientPays = total - bhytPays;
+        return { total, bhytPays, patientPays };
+      }
+      return { total, bhytPays: 0, patientPays: total };
+    }
+
+    /*************************************************************************
+     * 7. RENDER DANH SÁCH BỆNH NHÂN (SIDEBAR TRÁI)
+     *************************************************************************/
+    function populateDeptFilter() {
+      const select = document.getElementById("filterDept");
+      const currentVal = select.value;
+      const depts = [...new Set(appState.patients.map(p => p.department))];
+      select.innerHTML = `<option value="ALL">Tất cả khoa</option>` +
+        depts.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join("");
+      if (depts.includes(currentVal)) select.value = currentVal;
+    }
+
+    function renderPatientList() {
+      populateDeptFilter();
+      const query = document.getElementById("searchPatientInput").value.trim().toLowerCase();
+      const dept = document.getElementById("filterDept").value;
+      const status = document.getElementById("filterStatus").value;
+
+      const filtered = appState.patients.filter(p => {
+        const matchQuery = !query || p.name.toLowerCase().includes(query) || p.id.toLowerCase().includes(query) || p.department.toLowerCase().includes(query);
+        const matchDept = dept === "ALL" || p.department === dept;
+        const matchStatus = status === "ALL" || p.status === status;
+        return matchQuery && matchDept && matchStatus;
+      });
+
+      document.getElementById("patientCount").textContent = filtered.length;
+      const container = document.getElementById("patientListContainer");
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-8 px-4 text-xs text-slate-500">
+            Không tìm thấy bệnh nhân phù hợp với bộ lọc.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(p => {
+        const isSelected = p.id === appState.selectedPatientId;
+        return `
+          <button type="button" onclick="selectPatient('${p.id}')" class="w-full text-left p-3 rounded-xl border transition ${
+            isSelected
+              ? "bg-his-50 border-his-500 ring-1 ring-his-500 shadow-xs"
+              : "bg-white border-slate-200 hover:border-sky-300 hover:bg-slate-50"
+          }">
+            <div class="flex items-start justify-between gap-2 mb-1">
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[11px] font-mono font-semibold text-his-700">${escapeHtml(p.id)}</span>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">${escapeHtml(p.bed)}</span>
+                </div>
+                <p class="font-bold text-sm text-slate-900 truncate mt-0.5">${escapeHtml(p.name)}</p>
+              </div>
+              <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${getStatusBadgeClass(p.status)}">
+                ${escapeHtml(p.status)}
+              </span>
+            </div>
+            <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-slate-600">
+              <span>${p.age}T • ${escapeHtml(p.gender)}</span>
+              <span>•</span>
+              <span class="font-medium text-his-800">${escapeHtml(p.department)}</span>
+            </div>
+            <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+              <span class="px-1.5 py-0.5 rounded font-medium ${p.bhytRate > 0 ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-slate-100 text-slate-700"}">
+                ${escapeHtml(p.insuranceType)}
+              </span>
+              <span class="font-semibold text-slate-700">Ngày ĐT thứ ${p.currentDay}</span>
+            </div>
+          </button>
+        `;
+      }).join("");
+    }
+
+    function selectPatient(patientId) {
+      appState.selectedPatientId = patientId;
+      appState.labCart = [];
+      saveState();
+      closeMobileSidebar();
+      renderAll();
+    }
+
+    /*************************************************************************
+     * 8. RENDER BANNER BỆNH NHÂN + DẢI SINH HIỆU MỚI NHẤT
+     *************************************************************************/
+    function renderPatientBanner() {
+      const p = getCurrentPatient();
+      const latestVital = p.vitalsHistory[p.vitalsHistory.length - 1] || { hr: "-", bp: "-", temp: "-", rr: "-", spo2: "-", gcs: "-" };
+      const section = document.getElementById("patientBannerSection");
+
+      section.innerHTML = `
+        <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3">
+          <!-- Thông tin định danh bệnh nhân -->
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <h1 class="text-base sm:text-lg font-bold text-slate-900 tracking-tight">${escapeHtml(p.name)}</h1>
+              <span class="text-xs font-medium text-slate-600">(${p.age} tuổi • ${escapeHtml(p.gender)})</span>
+              <span class="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md bg-his-100 text-his-800">${escapeHtml(p.id)}</span>
+              <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${getStatusBadgeClass(p.status)}">${escapeHtml(p.status)}</span>
+              <span class="text-[11px] font-semibold px-2 py-0.5 rounded-md ${p.bhytRate > 0 ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-slate-100 text-slate-700 border border-slate-200"}">
+                ${escapeHtml(p.insuranceType)}
+              </span>
+            </div>
+            <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600">
+              <span><strong>Khoa:</strong> ${escapeHtml(p.department)}</span>
+              <span><strong>Giường:</strong> ${escapeHtml(p.bed)}</span>
+              <span><strong>Ngày điều trị:</strong> <span class="font-bold text-his-700">Ngày ${p.currentDay}</span></span>
+              <span class="truncate max-w-md"><strong>Lý do VV:</strong> ${escapeHtml(p.admissionSnapshot.chiefComplaint)}</span>
+            </div>
+          </div>
+
+          <!-- Nút tác vụ nhanh cho ca bệnh -->
+          <div class="flex items-center gap-2 shrink-0">
+            ${p.finalEvaluation ? `
+              <button type="button" onclick="showFinalEvaluationModal()" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition">
+                Xem bảng điểm tổng kết
+              </button>
+            ` : `
+              <button type="button" onclick="confirmDischargeAndEvaluate()" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-900 text-white shadow-xs transition flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Kết thúc ca & Tổng kết AI
+              </button>
+            `}
+          </div>
+        </div>
+
+        <!-- Dải Sinh hiệu trực quan tự động cảnh báo bất thường -->
+        <div class="mt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+          <div class="px-2.5 py-1.5 rounded-xl border ${vitalBoxStyle(getVitalAlert('hr', latestVital.hr))}">
+            <div class="text-[10px] uppercase font-semibold opacity-75">Mạch</div>
+            <div class="text-sm font-bold">${escapeHtml(latestVital.hr)} <span class="text-[11px] font-normal">l/ph</span></div>
+          </div>
+          <div class="px-2.5 py-1.5 rounded-xl border ${vitalBoxStyle(getVitalAlert('bp', latestVital.bp))}">
+            <div class="text-[10px] uppercase font-semibold opacity-75">Huyết áp</div>
+            <div class="text-sm font-bold">${escapeHtml(latestVital.bp)} <span class="text-[11px] font-normal">mmHg</span></div>
+          </div>
+          <div class="px-2.5 py-1.5 rounded-xl border ${vitalBoxStyle(getVitalAlert('temp', latestVital.temp))}">
+            <div class="text-[10px] uppercase font-semibold opacity-75">Nhiệt độ</div>
+            <div class="text-sm font-bold">${escapeHtml(latestVital.temp)} <span class="text-[11px] font-normal">°C</span></div>
+          </div>
+          <div class="px-2.5 py-1.5 rounded-xl border ${vitalBoxStyle(getVitalAlert('rr', latestVital.rr))}">
+            <div class="text-[10px] uppercase font-semibold opacity-75">Nhịp thở</div>
+            <div class="text-sm font-bold">${escapeHtml(latestVital.rr)} <span class="text-[11px] font-normal">l/ph</span></div>
+          </div>
+          <div class="px-2.5 py-1.5 rounded-xl border ${vitalBoxStyle(getVitalAlert('spo2', latestVital.spo2))}">
+            <div class="text-[10px] uppercase font-semibold opacity-75">SpO2</div>
+            <div class="text-sm font-bold">${escapeHtml(latestVital.spo2)} <span class="text-[11px] font-normal">%</span></div>
+          </div>
+          <div class="px-2.5 py-1.5 rounded-xl border bg-slate-50 border-slate-200 text-slate-800">
+            <div class="text-[10px] uppercase font-semibold opacity-75">Tri giác</div>
+            <div class="text-xs font-bold truncate pt-0.5" title="${escapeHtml(latestVital.gcs)}">${escapeHtml(latestVital.gcs)}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    /*************************************************************************
+     * 9. ĐIỀU HƯỚNG TAB & RENDER TỪNG PHÂN HỆ
+     *************************************************************************/
+    function updateTabButtons() {
+      document.querySelectorAll(".emr-tab-btn").forEach(btn => {
+        const isActive = btn.dataset.tab === appState.activeTab;
+        if (isActive) {
+          btn.classList.add("border-his-600", "text-his-700", "bg-his-50/50");
+          btn.classList.remove("border-transparent", "text-slate-600", "hover:text-slate-900", "hover:bg-slate-50");
+        } else {
+          btn.classList.remove("border-his-600", "text-his-700", "bg-his-50/50");
+          btn.classList.add("border-transparent", "text-slate-600", "hover:text-slate-900", "hover:bg-slate-50");
+        }
+      });
+    }
+
+    function renderActiveTab() {
+      updateTabButtons();
+      const area = document.getElementById("tabContentArea");
+      if (appState.activeTab === "record") {
+        renderTabRecord(area);
+      } else if (appState.activeTab === "labs") {
+        renderTabLabs(area);
+      } else if (appState.activeTab === "treatment") {
+        renderTabTreatment(area);
+      } else if (appState.activeTab === "billing") {
+        renderTabBilling(area);
+      }
+    }
+
+    /* =====================================================================
+     * TAB 1: HÀNH CHÍNH & HỒ SƠ BỆNH ÁN CHUẨN BỘ Y TẾ
+     * ===================================================================== */
+    function renderTabRecord(container) {
+      const p = getCurrentPatient();
+      container.innerHTML = `
+        <div class="max-w-5xl mx-auto space-y-5">
+          <!-- Khối I: Hành chính -->
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <h2 class="text-xs sm:text-sm font-bold uppercase tracking-wide text-his-900">I. Phần Hành chính</h2>
+              <span class="text-xs text-slate-500">Ngày giờ vào viện: <strong>${escapeHtml(p.admissionTime)}</strong></span>
+            </div>
+            <div class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs sm:text-sm">
+              <div><span class="text-slate-500 block text-[11px]">Họ và tên bệnh nhân</span><strong class="text-slate-900">${escapeHtml(p.name)}</strong></div>
+              <div><span class="text-slate-500 block text-[11px]">Tuổi / Giới tính</span><strong>${p.age} tuổi — ${escapeHtml(p.gender)}</strong></div>
+              <div><span class="text-slate-500 block text-[11px]">Nghề nghiệp</span><strong>${escapeHtml(p.occupation)}</strong></div>
+              <div><span class="text-slate-500 block text-[11px]">Khoa / Phòng - Giường</span><strong>${escapeHtml(p.department)} (${escapeHtml(p.bed)})</strong></div>
+              <div class="sm:col-span-2"><span class="text-slate-500 block text-[11px]">Địa chỉ</span><strong>${escapeHtml(p.address)}</strong></div>
+              <div class="sm:col-span-2"><span class="text-slate-500 block text-[11px]">Đối tượng & Số thẻ BHYT</span>
+                <strong>${escapeHtml(p.insuranceType)}</strong>
+                ${p.bhytCard ? `<span class="ml-1.5 font-mono text-xs px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">${escapeHtml(p.bhytCard)}</span>` : ""}
+              </div>
+            </div>
+          </div>
+
+          <!-- Khối tham khảo: Ghi nhận khám tiếp nhận ban đầu -->
+          <div class="bg-sky-50/70 rounded-2xl border border-sky-200 p-4 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs sm:text-sm font-bold text-his-900 flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-his-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Dữ liệu thăm khám ban đầu lúc tiếp nhận (Tham khảo để làm bệnh án)
+              </h3>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-slate-700 leading-relaxed">
+              <div class="bg-white/90 p-3 rounded-xl border border-sky-100">
+                <p class="font-bold text-his-800 mb-1">Bệnh sử khai thác được:</p>
+                <p>${formatMultiline(p.admissionSnapshot.history)}</p>
+                <p class="font-bold text-his-800 mt-2.5 mb-1">Tiền sử (Bản thân / Dị ứng / Gia đình):</p>
+                <p>${formatMultiline(p.admissionSnapshot.pastHistory)}</p>
+              </div>
+              <div class="bg-white/90 p-3 rounded-xl border border-sky-100">
+                <p class="font-bold text-his-800 mb-1">Khám thực thể ban đầu:</p>
+                <p>${formatMultiline(p.admissionSnapshot.initialExam)}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Khối II: Soạn thảo Hồ sơ Bệnh án Chuẩn Bộ Y tế -->
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+              <h2 class="text-xs sm:text-sm font-bold uppercase tracking-wide text-his-900">II. Hồ sơ Bệnh án & Biện luận Chẩn đoán (Người học tự hoàn thiện)</h2>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="saveMedicalRecord()" class="px-3.5 py-1.5 rounded-lg bg-his-600 hover:bg-his-700 text-white text-xs font-semibold shadow-xs transition">
+                  Lưu bệnh án
+                </button>
+                <button type="button" onclick="reviewRecordWithAI()" class="px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold shadow-xs transition flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
+                  Nhờ AI nhận xét bệnh án & chẩn đoán
+                </button>
+              </div>
+            </div>
+
+            <div class="p-4 space-y-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">1. Lý do vào viện</label>
+                <input id="recChiefComplaint" type="text" value="${escapeHtml(p.record.chiefComplaint)}" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-his-500" />
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">2. Quá trình bệnh lý (Bệnh sử)</label>
+                  <textarea id="recHistory" rows="4" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-his-500">${escapeHtml(p.record.history)}</textarea>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">3. Tiền sử (Bản thân, Dị ứng thuốc, Gia đình)</label>
+                  <textarea id="recPastHistory" rows="4" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-his-500">${escapeHtml(p.record.pastHistory)}</textarea>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">4. Khám toàn thân & Khám các cơ quan</label>
+                <textarea id="recExam" rows="3" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-his-500">${escapeHtml(p.record.exam)}</textarea>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">5. Tóm tắt bệnh án (Hội chứng & Triệu chứng chính)</label>
+                <textarea id="recSummary" rows="3" placeholder="VD: Bệnh nhân nam 62 tuổi vào viện vì..., qua hỏi bệnh và thăm khám ghi nhận các hội chứng/triệu chứng chính: Hội chứng nhiễm trùng, Tam chứng Charcot..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-his-500">${escapeHtml(p.record.summary)}</textarea>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">6. Chẩn đoán sơ bộ</label>
+                  <textarea id="recPrelim" rows="2" placeholder="Nhập chẩn đoán sơ bộ của bạn..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-his-500">${escapeHtml(p.record.prelimDiagnosis)}</textarea>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">7. Chẩn đoán phân biệt</label>
+                  <textarea id="recDiff" rows="2" placeholder="Liệt kê các chẩn đoán cần loại trừ..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-his-500">${escapeHtml(p.record.diffDiagnosis)}</textarea>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1 border-t border-slate-100">
+                <div class="md:col-span-2">
+                  <label class="block text-xs font-bold text-his-800 mb-1">8. Chẩn đoán xác định (Cập nhật sau khi có Cận lâm sàng)</label>
+                  <input id="recFinal" type="text" value="${escapeHtml(p.record.finalDiagnosis)}" placeholder="Bệnh chính + Biến chứng + Bệnh kèm..." class="w-full px-3 py-2 text-sm border border-his-300 bg-his-50/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-his-500" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-his-800 mb-1">Mã bệnh ICD-10</label>
+                  <input id="recIcd10" type="text" value="${escapeHtml(p.record.icd10)}" placeholder="VD: K83.0, I50.9, J18.9..." class="w-full px-3 py-2 text-sm font-mono uppercase border border-his-300 bg-his-50/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-his-500" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Phản hồi của AI về phần làm bệnh án (nếu đã từng yêu cầu) -->
+          ${p.recordFeedback ? `
+            <div class="bg-amber-50 rounded-2xl border border-amber-200 p-4 space-y-2">
+              <div class="flex items-center justify-between">
+                <h3 class="text-xs sm:text-sm font-bold text-amber-900 flex items-center gap-1.5">
+                  <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  Nhận xét từ Bác sĩ Hướng dẫn AI về phần Bệnh án & Chẩn đoán
+                </h3>
+              </div>
+              <div class="text-xs sm:text-sm text-slate-800 leading-relaxed">${formatMultiline(p.recordFeedback)}</div>
+            </div>
+          ` : ""}
+        </div>
+      `;
+    }
+
+    function readRecordFormIntoPatient() {
+      const p = getCurrentPatient();
+      const el = id => document.getElementById(id);
+      if (!el("recChiefComplaint")) return;
+      p.record.chiefComplaint = el("recChiefComplaint").value.trim();
+      p.record.history = el("recHistory").value.trim();
+      p.record.pastHistory = el("recPastHistory").value.trim();
+      p.record.exam = el("recExam").value.trim();
+      p.record.summary = el("recSummary").value.trim();
+      p.record.prelimDiagnosis = el("recPrelim").value.trim();
+      p.record.diffDiagnosis = el("recDiff").value.trim();
+      p.record.finalDiagnosis = el("recFinal").value.trim();
+      p.record.icd10 = el("recIcd10").value.trim().toUpperCase();
+      saveState();
+    }
+
+    function saveMedicalRecord() {
+      readRecordFormIntoPatient();
+      showToast("Đã lưu hồ sơ bệnh án vào hệ thống.", "success");
+    }
+
+    async function reviewRecordWithAI() {
+      readRecordFormIntoPatient();
+      const p = getCurrentPatient();
+      showLoading("Bác sĩ hướng dẫn AI đang chấm và nhận xét phần bệnh án...");
+      try {
+        const prompt = `
+Thông tin bệnh nhân thực tế (ẩn với sinh viên):
+- Chẩn đoán thực sự: ${p.hiddenTruth.actualDiagnosis}
+- Dữ liệu lúc vào viện: ${p.admissionSnapshot.history} | Khám: ${p.admissionSnapshot.initialExam}
+
+Phần sinh viên/bác sĩ trẻ vừa soạn thảo trong bệnh án:
+- Lý do vào viện: ${p.record.chiefComplaint}
+- Bệnh sử: ${p.record.history}
+- Tiền sử: ${p.record.pastHistory}
+- Khám: ${p.record.exam}
+- Tóm tắt bệnh án: ${p.record.summary || "(Chưa viết)"}
+- Chẩn đoán sơ bộ: ${p.record.prelimDiagnosis || "(Chưa viết)"}
+- Chẩn đoán phân biệt: ${p.record.diffDiagnosis || "(Chưa viết)"}
+- Chẩn đoán xác định: ${p.record.finalDiagnosis || "(Chưa viết)"} | ICD-10: ${p.record.icd10 || "(Chưa nhập)"}
+- Số đợt CLS đã làm: ${p.labOrders.length}
+
+Hãy nhận xét ngắn gọn, sắc bén theo phong cách bác sĩ giảng viên y khoa Việt Nam (dùng gạch đầu dòng rõ ràng):
+1. Điểm làm tốt trong tóm tắt bệnh án & tiếp cận chẩn đoán.
+2. Điểm còn thiếu/chưa chuẩn (hội chứng còn sót, chẩn đoán phân biệt cần bổ sung, mã ICD-10 nếu đã có).
+3. Gợi ý bước tiếp theo (không tiết lộ thẳng đáp án cuối nếu người học chưa làm cận lâm sàng).`;
+
+        const reply = await callGeminiAPI({
+          systemPrompt: "Bạn là Giảng viên Lâm sàng / Bác sĩ Chuyên khoa II tại bệnh viện tuyến cuối Việt Nam. Nhận xét bằng tiếng Việt y khoa chuẩn xác, mang tính sư phạm và khích lệ.",
+          userPrompt: prompt,
+          expectJson: false
+        });
+        p.recordFeedback = reply;
+        saveState();
+        renderActiveTab();
+        showToast("Đã có nhận xét từ Bác sĩ hướng dẫn AI!", "success");
+      } catch (err) {
+        showToast("Lỗi khi gọi AI nhận xét: " + err.message, "error");
+      } finally {
+        hideLoading();
+      }
+    }
+
+    /* =====================================================================
+     * TAB 2: CHỈ ĐỊNH CẬN LÂM SÀNG (BHYT & THU PHÍ) + TRẢ KẾT QUẢ AI
+     * ===================================================================== */
+    function renderTabLabs(container) {
+      const p = getCurrentPatient();
+      const groups = ["ALL", ...new Set(LAB_CATALOG.map(l => l.group))];
+      const filteredLabs = LAB_CATALOG.filter(item => {
+        const matchGroup = appState.labGroupFilter === "ALL" || item.group === appState.labGroupFilter;
+        const matchSearch = !appState.labSearch || item.name.toLowerCase().includes(appState.labSearch.toLowerCase()) || item.id.toLowerCase().includes(appState.labSearch.toLowerCase());
+        return matchGroup && matchSearch;
+      });
+
+      // Tính tạm tính giỏ chỉ định
+      let cartTotal = 0, cartBhyt = 0, cartPatient = 0;
+      const cartHtml = appState.labCart.map((c, idx) => {
+        const item = LAB_CATALOG.find(l => l.id === c.labId);
+        if (!item) return "";
+        const price = c.paymentType === "BHYT" ? item.priceBhyt : item.priceService;
+        const cost = calcItemCost(price, 1, c.paymentType, p.bhytRate, item.bhytEligible);
+        cartTotal += cost.total;
+        cartBhyt += cost.bhytPays;
+        cartPatient += cost.patientPays;
+        return `
+          <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div class="min-w-0">
+              <p class="text-xs font-semibold text-slate-800">${escapeHtml(item.name)}</p>
+              <p class="text-[11px] text-slate-500">${escapeHtml(item.group)} • Đơn giá: <strong>${formatVND(price)}</strong></p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <select onchange="updateLabCartPayment(${idx}, this.value)" class="text-[11px] font-semibold px-2 py-1 rounded-lg border border-slate-300 bg-white">
+                ${item.bhytEligible && p.bhytRate > 0 ? `<option value="BHYT" ${c.paymentType === "BHYT" ? "selected" : ""}>BHYT (${p.bhytRate}%)</option>` : ""}
+                <option value="Thu phí" ${c.paymentType === "Thu phí" ? "selected" : ""}>Thu phí (Dịch vụ)</option>
+              </select>
+              <button type="button" onclick="removeLabFromCart(${idx})" class="p-1 text-rose-600 hover:bg-rose-50 rounded-lg" title="Xóa chỉ định">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      // Render lịch sử kết quả CLS
+      const historyHtml = p.labOrders.length === 0
+        ? `<div class="bg-white rounded-2xl border border-dashed border-slate-300 p-8 text-center text-xs sm:text-sm text-slate-500">Chưa có phiếu chỉ định cận lâm sàng nào. Hãy chọn các xét nghiệm/CĐHA ở bảng trên và bấm <strong>"Gửi chỉ định & Trả kết quả (AI)"</strong>.</div>`
+        : [...p.labOrders].reverse().map(order => `
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div class="px-4 py-3 bg-his-50/70 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <span class="text-xs font-bold text-his-900">Phiếu chỉ định ngày điều trị thứ ${order.day}</span>
+                <span class="text-xs text-slate-500 ml-2">(${escapeHtml(order.timestamp)})</span>
+                ${order.note ? `<p class="text-[11px] text-slate-600 mt-0.5">Chẩn đoán / Lý do chỉ định: <em>${escapeHtml(order.note)}</em></p>` : ""}
+              </div>
+              <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Đã trả kết quả</span>
+            </div>
+
+            <div class="p-4 space-y-4">
+              ${order.labResults && order.labResults.length > 0 ? `
+                <div>
+                  <h4 class="text-xs font-bold uppercase text-slate-600 mb-2">Kết quả Xét nghiệm (Huyết học - Sinh hóa - Vi sinh)</h4>
+                  <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                    <table class="w-full text-left text-xs">
+                      <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
+                        <tr>
+                          <th class="py-2 px-3 font-semibold">Tên xét nghiệm</th>
+                          <th class="py-2 px-3 font-semibold">Kết quả</th>
+                          <th class="py-2 px-3 font-semibold">Trị số tham chiếu</th>
+                          <th class="py-2 px-3 font-semibold">Đơn vị</th>
+                          <th class="py-2 px-3 font-semibold text-center">Đánh giá</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-slate-100">
+                        ${order.labResults.map(r => {
+                          const flag = (r.flag || "Bình thường").toLowerCase();
+                          let badge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600">Bình thường</span>`;
+                          let valClass = "font-semibold text-slate-900";
+                          if (flag.includes("cao") || flag.includes("dương") || flag.includes("bất thường")) {
+                            badge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700">▲ ${escapeHtml(r.flag)}</span>`;
+                            valClass = "font-bold text-red-700";
+                          } else if (flag.includes("thấp") || flag.includes("giảm")) {
+                            badge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">▼ ${escapeHtml(r.flag)}</span>`;
+                            valClass = "font-bold text-blue-700";
+                          }
+                          return `
+                            <tr class="hover:bg-slate-50/70">
+                              <td class="py-2 px-3 font-medium text-slate-800">${escapeHtml(r.testName)}</td>
+                              <td class="py-2 px-3 ${valClass}">${escapeHtml(r.value)}</td>
+                              <td class="py-2 px-3 text-slate-500">${escapeHtml(r.referenceRange)}</td>
+                              <td class="py-2 px-3 text-slate-500">${escapeHtml(r.unit)}</td>
+                              <td class="py-2 px-3 text-center">${badge}</td>
+                            </tr>
+                          `;
+                        }).join("")}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ` : ""}
+
+              ${order.imagingResults && order.imagingResults.length > 0 ? `
+                <div class="space-y-2.5">
+                  <h4 class="text-xs font-bold uppercase text-slate-600">Phiếu Kết quả Chẩn đoán hình ảnh & Thăm dò chức năng</h4>
+                  ${order.imagingResults.map(img => `
+                    <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                      <p class="text-xs sm:text-sm font-bold text-his-900">${escapeHtml(img.serviceName)}</p>
+                      <p class="text-xs text-slate-700 leading-relaxed"><strong>Mô tả:</strong> ${formatMultiline(img.findings)}</p>
+                      <p class="text-xs text-his-900 font-semibold bg-sky-50 border border-sky-200 px-2.5 py-1.5 rounded-lg">
+                        <strong>Kết luận:</strong> ${escapeHtml(img.conclusion)}
+                      </p>
+                    </div>
+                  `).join("")}
+                </div>
+              ` : ""}
+            </div>
+          </div>
+        `).join("");
+
+      container.innerHTML = `
+        <div class="max-w-6xl mx-auto space-y-5">
+          <!-- Khu vực chọn chỉ định mới -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <!-- Cột trái: Danh mục dịch vụ CLS -->
+            <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col overflow-hidden">
+              <div class="p-3.5 bg-slate-50 border-b border-slate-200 space-y-2.5">
+                <div class="flex items-center justify-between">
+                  <h2 class="text-xs sm:text-sm font-bold uppercase text-his-900">Danh mục Chỉ định Cận lâm sàng</h2>
+                  <span class="text-[11px] text-slate-500">Chọn để thêm vào phiếu</span>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-2">
+                  <input id="labSearchInput" type="text" value="${escapeHtml(appState.labSearch)}" oninput="onLabSearchInput(this.value)" placeholder="Tìm tên xét nghiệm, X-quang, siêu âm, CT..." class="flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-his-500" />
+                  <select onchange="onLabGroupChange(this.value)" class="px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white">
+                    ${groups.map(g => `<option value="${escapeHtml(g)}" ${appState.labGroupFilter === g ? "selected" : ""}>${g === "ALL" ? "Tất cả nhóm" : escapeHtml(g)}</option>`).join("")}
+                  </select>
+                </div>
+              </div>
+              <div class="max-h-80 overflow-y-auto divide-y divide-slate-100">
+                ${filteredLabs.map(item => {
+                  const inCart = appState.labCart.some(c => c.labId === item.id);
+                  return `
+                    <div class="px-3.5 py-2.5 flex items-center justify-between gap-2 hover:bg-slate-50">
+                      <div class="min-w-0">
+                        <p class="text-xs font-semibold text-slate-800">${escapeHtml(item.name)}</p>
+                        <div class="flex flex-wrap items-center gap-2 mt-0.5 text-[11px] text-slate-500">
+                          <span class="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">${escapeHtml(item.group)}</span>
+                          <span>Giá BHYT: <strong>${formatVND(item.priceBhyt)}</strong></span>
+                          <span>• Dịch vụ: ${formatVND(item.priceService)}</span>
+                        </div>
+                      </div>
+                      <button type="button" onclick="toggleLabInCart('${item.id}')" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition ${
+                        inCart
+                          ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                          : "bg-his-50 hover:bg-his-100 text-his-700 border border-his-200"
+                      }">
+                        ${inCart ? "✓ Đã chọn" : "+ Chọn"}
+                      </button>
+                    </div>
+                  `;
+                }).join("")}
+              </div>
+            </div>
+
+            <!-- Cột phải: Phiếu chỉ định đang soạn -->
+            <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col overflow-hidden">
+              <div class="p-3.5 bg-his-900 text-white flex items-center justify-between">
+                <h3 class="text-xs sm:text-sm font-bold">Phiếu Chỉ định hiện tại (${appState.labCart.length})</h3>
+                ${appState.labCart.length > 0 ? `<button type="button" onclick="clearLabCart()" class="text-[11px] text-sky-200 hover:text-white underline">Xóa tất cả</button>` : ""}
+              </div>
+              <div class="p-3.5 flex-1 flex flex-col justify-between gap-3">
+                <div class="space-y-2 max-h-56 overflow-y-auto">
+                  ${appState.labCart.length === 0
+                    ? `<p class="text-xs text-slate-400 text-center py-6">Chưa chọn dịch vụ cận lâm sàng nào.</p>`
+                    : cartHtml}
+                </div>
+
+                <div class="space-y-3 pt-3 border-t border-slate-200">
+                  <div>
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Chẩn đoán / Lý do chỉ định (tùy chọn)</label>
+                    <input id="labOrderNote" type="text" placeholder="VD: Nghi viêm đường mật cấp, theo dõi đáp ứng kháng sinh..." class="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-his-500" />
+                  </div>
+
+                  <div class="bg-slate-50 rounded-xl p-2.5 border border-slate-200 text-xs space-y-1">
+                    <div class="flex justify-between"><span>Tổng chi phí phiếu này:</span><strong>${formatVND(cartTotal)}</strong></div>
+                    <div class="flex justify-between text-emerald-700"><span>Ước tính BHYT chi trả:</span><strong>${formatVND(cartBhyt)}</strong></div>
+                    <div class="flex justify-between text-rose-700"><span>Bệnh nhân tự trả / Đồng chi trả:</span><strong>${formatVND(cartPatient)}</strong></div>
+                  </div>
+
+                  <button type="button" onclick="submitLabOrders()" ${appState.labCart.length === 0 ? "disabled" : ""} class="w-full py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold text-white transition shadow-sm ${
+                    appState.labCart.length === 0
+                      ? "bg-slate-300 cursor-not-allowed"
+                      : "bg-his-600 hover:bg-his-700"
+                  }">
+                    Gửi chỉ định & Trả kết quả (AI)
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Khu vực kết quả CLS đã trả -->
+          <div class="space-y-3">
+            <h3 class="text-xs sm:text-sm font-bold uppercase tracking-wide text-slate-700">Kết quả Cận lâm sàng đã thực hiện (${p.labOrders.length} đợt)</h3>
+            ${historyHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    function onLabSearchInput(val) {
+      appState.labSearch = val;
+      renderActiveTab();
+      const inp = document.getElementById("labSearchInput");
+      if (inp) { inp.focus(); inp.setSelectionRange(val.length, val.length); }
+    }
+
+    function onLabGroupChange(val) {
+      appState.labGroupFilter = val;
+      renderActiveTab();
+    }
+
+    function toggleLabInCart(labId) {
+      const idx = appState.labCart.findIndex(c => c.labId === labId);
+      if (idx >= 0) {
+        appState.labCart.splice(idx, 1);
+      } else {
+        const p = getCurrentPatient();
+        const item = LAB_CATALOG.find(l => l.id === labId);
+        const defaultPay = (item.bhytEligible && p.bhytRate > 0) ? "BHYT" : "Thu phí";
+        appState.labCart.push({ labId, paymentType: defaultPay });
+      }
+      renderActiveTab();
+    }
+
+    function updateLabCartPayment(idx, val) {
+      if (appState.labCart[idx]) {
+        appState.labCart[idx].paymentType = val;
+        renderActiveTab();
+      }
+    }
+
+    function removeLabFromCart(idx) {
+      appState.labCart.splice(idx, 1);
+      renderActiveTab();
+    }
+
+    function clearLabCart() {
+      appState.labCart = [];
+      renderActiveTab();
+    }
+
+    async function submitLabOrders() {
+      if (appState.labCart.length === 0) return;
+      const p = getCurrentPatient();
+      const note = document.getElementById("labOrderNote")?.value.trim() || "";
+      const selectedItems = appState.labCart.map(c => {
+        const item = LAB_CATALOG.find(l => l.id === c.labId);
+        const price = c.paymentType === "BHYT" ? item.priceBhyt : item.priceService;
+        const cost = calcItemCost(price, 1, c.paymentType, p.bhytRate, item.bhytEligible);
+        return {
+          id: item.id,
+          name: item.name,
+          group: item.group,
+          type: item.type,
+          paymentType: c.paymentType,
+          unitPrice: price,
+          bhytPays: cost.bhytPays,
+          patientPays: cost.patientPays
+        };
+      });
+
+      showLoading("Phòng Xét nghiệm & Chẩn đoán hình ảnh đang phân tích mẫu và trả kết quả...");
+
+      try {
+        const recentTreatment = p.treatmentDays.map(d =>
+          `Ngày ${d.day}: Sinh hiệu M=${d.vitals.hr}, HA=${d.vitals.bp}, T=${d.vitals.temp}, SpO2=${d.vitals.spo2}%. Diễn tiến: ${d.progression}. Y lệnh thuốc: ${d.orders ? d.orders.drugs.map(dr => dr.name + " (" + dr.usage + ")").join("; ") : "Chưa có"}`
+        ).join("\n");
+
+        const prevLabsSummary = p.labOrders.map(o =>
+          `Đợt ngày ${o.day}: ` + (o.labResults || []).map(r => `${r.testName}=${r.value}${r.unit}`).join(", ")
+        ).join("\n");
+
+        const prompt = `
+Hãy đóng vai hệ thống LIS/PACS của bệnh viện Việt Nam để trả kết quả Cận lâm sàng CHÍNH XÁC, ĐỒNG NHẤT LÂM SÀNG cho bệnh nhân sau:
+
+BỆNH NHÂN: ${p.name}, ${p.age} tuổi, ${p.gender}, Khoa ${p.department}, Ngày điều trị thứ ${p.currentDay}.
+BỆNH LÝ THỰC SỰ (Bí mật của ca bệnh): ${p.hiddenTruth.actualDiagnosis}
+ĐẶC ĐIỂM CLS NỀN TẢNG: ${p.hiddenTruth.keyLabs}
+DIỄN TIẾN & ĐIỀU TRỊ ĐẾN NAY:
+${recentTreatment}
+KẾT QUẢ CLS CÁC ĐỢT TRƯỚC (để đảm bảo diễn tiến động học hợp lý theo ngày điều trị):
+${prevLabsSummary || "Chưa có đợt CLS nào trước đó."}
+
+DANH SÁCH CHỈ ĐỊNH CẦN TRẢ KẾT QUẢ LẦN NÀY:
+${selectedItems.map(i => `- [${i.type === "imaging" ? "CĐHA/TDCN" : "XÉT NGHIỆM"}] ${i.name}`).join("\n")}
+
+YÊU CẦU QUAN TRỌNG:
+- Với các xét nghiệm tổ hợp (như Tổng phân tích tế bào máu, Điện giải đồ, Đông máu, Chức năng thận, Men gan, Bilirubin, Khí máu, Nước tiểu...), hãy tách ra các thông số thành phần chuẩn thực tế (VD: WBC, Neu%, RBC, Hb, PLT; Na+, K+, Cl-; AST, ALT...).
+- Nếu là ngày điều trị 2, 3 trở đi và bệnh nhân đang được điều trị đúng phác đồ thì các chỉ số viêm/sinh hóa phải cải thiện hợp lý; nếu điều trị sai/thiếu thì xấu đi hoặc không giảm.
+- Trả về DUY NHẤT JSON đúng cấu trúc:
+{
+  "labResults": [
+    {
+      "testName": "Tên thông số xét nghiệm (tiếng Việt chuẩn)",
+      "value": "Giá trị số hoặc kết quả định tính",
+      "referenceRange": "Khoảng tham chiếu chuẩn",
+      "unit": "Đơn vị",
+      "flag": "Bình thường" | "Cao" | "Thấp" | "Dương tính" | "Bất thường"
+    }
+  ],
+  "imagingResults": [
+    {
+      "serviceName": "Tên kỹ thuật CĐHA / Thăm dò chức năng",
+      "findings": "Mô tả hình ảnh/điện tim chi tiết chuẩn chuyên khoa tiếng Việt",
+      "conclusion": "Kết luận ngắn gọn, rõ ràng"
+    }
+  ]
+}`;
+
+        const res = await callGeminiAPI({
+          systemPrompt: "Bạn là Hệ thống Trả kết quả Xét nghiệm & Chẩn đoán hình ảnh chuẩn Bộ Y tế Việt Nam. Luôn trả JSON hợp lệ, đầy đủ, sát thực tế lâm sàng.",
+          userPrompt: prompt,
+          expectJson: true
+        });
+
+        const now = new Date();
+        const timestamp = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")} - Ngày ĐT ${p.currentDay}`;
+
+        p.labOrders.push({
+          id: "CLS-" + Date.now(),
+          day: p.currentDay,
+          timestamp,
+          note,
+          orderedItems: selectedItems,
+          labResults: Array.isArray(res.labResults) ? res.labResults : [],
+          imagingResults: Array.isArray(res.imagingResults) ? res.imagingResults : []
+        });
+
+        appState.labCart = [];
+        saveState();
+        renderActiveTab();
+        showToast("Phòng xét nghiệm & CĐHA đã trả kết quả!", "success");
+      } catch (err) {
+        showToast("Lỗi khi trả kết quả CLS: " + err.message, "error");
+      } finally {
+        hideLoading();
+      }
+    }
+
+    /* =====================================================================
+     * TAB 3: TỜ ĐIỀU TRỊ HÀNG NGÀY & Y LỆNH THUỐC / DỊCH TRUYỀN (2 CỘT BYT)
+     * ===================================================================== */
+    function renderTabTreatment(container) {
+      const p = getCurrentPatient();
+      const drugGroups = ["ALL", ...new Set(DRUG_CATALOG.map(d => d.group))];
+      const filteredDrugs = DRUG_CATALOG.filter(d => {
+        const matchGroup = appState.drugGroupFilter === "ALL" || d.group === appState.drugGroupFilter;
+        const matchSearch = !appState.drugSearch || d.name.toLowerCase().includes(appState.drugSearch.toLowerCase()) || d.group.toLowerCase().includes(appState.drugSearch.toLowerCase());
+        return matchGroup && matchSearch;
+      });
+
+      // Các ngày điều trị trước đó (đã chốt y lệnh)
+      const pastDays = p.treatmentDays.filter(d => d.orders !== null);
+      const currentDayEntry = p.treatmentDays[p.treatmentDays.length - 1];
+
+      const bhytBadge = type => {
+        if (type === "BHYT") return `<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">BHYT</span>`;
+        if (type === "BHYT có điều kiện") return `<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">BHYT ĐK</span>`;
+        return `<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">Thu phí</span>`;
+      };
+
+      container.innerHTML = `
+        <div class="max-w-6xl mx-auto space-y-5">
+
+          <!-- PHẦN 1: TỜ ĐIỀU TRỊ CHUẨN 2 CỘT BỘ Y TẾ (CÁC NGÀY ĐÃ ĐIỀU TRỊ) -->
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div class="px-4 py-3 bg-his-900 text-white flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 class="text-xs sm:text-sm font-bold uppercase tracking-wide">Tờ Điều trị — Diễn tiến & Y lệnh theo ngày</h2>
+                <p class="text-[11px] text-sky-200">Cấu trúc 2 cột chuẩn mẫu hồ sơ bệnh án Bộ Y tế</p>
+              </div>
+              <span class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white/15">Hiện tại: Ngày điều trị thứ ${p.currentDay}</span>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse min-w-[700px]">
+                <thead>
+                  <tr class="bg-slate-100 border-b border-slate-200 text-xs font-bold uppercase text-slate-700">
+                    <th class="p-3 w-[44%] border-r border-slate-200">Ngày giờ / Sinh hiệu / Diễn tiến lâm sàng</th>
+                    <th class="p-3 w-[56%]">Y lệnh điều trị (Chăm sóc - Dinh dưỡng - Thuốc & Dịch truyền)</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 text-xs">
+                  ${p.treatmentDays.map((td, idx) => {
+                    const isLatestPending = td.orders === null;
+                    return `
+                      <tr class="${isLatestPending ? "bg-sky-50/35" : "bg-white"} align-top">
+                        <!-- Cột trái: Diễn tiến -->
+                        <td class="p-3.5 border-r border-slate-200 space-y-2">
+                          <div class="flex items-center justify-between">
+                            <span class="font-bold text-his-800 text-xs">Ngày điều trị thứ ${td.day}</span>
+                            <span class="text-[11px] text-slate-500">${escapeHtml(td.dateTime)}</span>
+                          </div>
+                          <div class="flex flex-wrap gap-1.5 text-[11px] bg-slate-50 p-2 rounded-lg border border-slate-200">
+                            <span><strong>M:</strong> ${escapeHtml(td.vitals.hr)}</span> •
+                            <span><strong>HA:</strong> ${escapeHtml(td.vitals.bp)}</span> •
+                            <span><strong>T°:</strong> ${escapeHtml(td.vitals.temp)}°C</span> •
+                            <span><strong>NT:</strong> ${escapeHtml(td.vitals.rr)}</span> •
+                            <span><strong>SpO2:</strong> ${escapeHtml(td.vitals.spo2)}%</span>
+                          </div>
+                          <p class="text-slate-800 leading-relaxed">${formatMultiline(td.progression)}</p>
+                          ${td.nursingNote ? `
+                            <div class="text-[11px] bg-emerald-50/70 border border-emerald-200 text-emerald-900 rounded-lg p-2">
+                              <strong>Điều dưỡng ghi nhận:</strong> ${escapeHtml(td.nursingNote)}
+                            </div>
+                          ` : ""}
+                        </td>
+
+                        <!-- Cột phải: Y lệnh -->
+                        <td class="p-3.5 space-y-2.5">
+                          ${isLatestPending ? `
+                            <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2">
+                              <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse-dot shrink-0"></span>
+                              <span><strong>Đang chờ bác sĩ ra y lệnh cho Ngày ${td.day}.</strong> Hãy soạn y lệnh ở khung bên dưới rồi bấm xác nhận sang ngày tiếp theo.</span>
+                            </div>
+                          ` : `
+                            <div class="space-y-1 text-slate-700">
+                              <p><strong>Chăm sóc:</strong> ${escapeHtml(td.orders.careLevel)} • <strong>Dinh dưỡng:</strong> ${escapeHtml(td.orders.diet)}</p>
+                              ${td.orders.monitoring ? `<p><strong>Theo dõi:</strong> ${escapeHtml(td.orders.monitoring)}</p>` : ""}
+                              ${td.orders.procedures ? `<p><strong>Thủ thuật / Hội chẩn:</strong> <span class="text-his-800 font-medium">${escapeHtml(td.orders.procedures)}</span></p>` : ""}
+                            </div>
+                            <div class="pt-1.5 border-t border-slate-100">
+                              <p class="font-bold text-slate-800 mb-1">Y lệnh Thuốc & Dịch truyền:</p>
+                              ${td.orders.drugs.length === 0 ? `<p class="italic text-slate-400">Không kê thuốc.</p>` : `
+                                <ol class="list-decimal list-inside space-y-1 text-slate-800">
+                                  ${td.orders.drugs.map(dr => `
+                                    <li>
+                                      <span class="font-semibold">${escapeHtml(dr.name)}</span>
+                                      <span class="font-bold text-his-700">× ${dr.qty} ${escapeHtml(dr.unit)}</span>
+                                      <span class="text-[10px] px-1.5 py-0.5 rounded ml-1 ${dr.paymentType === "BHYT" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}">${escapeHtml(dr.paymentType)}</span>
+                                      <div class="pl-4 text-[11px] text-slate-600">↳ ${escapeHtml(dr.usage)}</div>
+                                    </li>
+                                  `).join("")}
+                                </ol>
+                              `}
+                            </div>
+
+                            ${td.attendingFeedback ? `
+                              <details class="mt-2 rounded-xl border border-amber-200 bg-amber-50/70 overflow-hidden">
+                                <summary class="px-3 py-2 cursor-pointer text-[11px] font-bold text-amber-900 select-none hover:bg-amber-100/60">
+                                  Phản hồi chuyên môn từ Bác sĩ Trưởng khoa (Bấm để mở/ẩn)
+                                </summary>
+                                <div class="px-3 pb-3 pt-1 text-xs text-slate-800 leading-relaxed border-t border-amber-200/70">
+                                  ${formatMultiline(td.attendingFeedback)}
+                                </div>
+                              </details>
+                            ` : ""}
+                          `}
+                        </td>
+                      </tr>
+                    `;
+                  }).join("")}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- PHẦN 2: KHU VỰC SOẠN Y LỆNH CHO NGÀY ĐIỀU TRỊ HIỆN TẠI -->
+          ${!p.discharged ? `
+          <div class="bg-white rounded-2xl border-2 border-his-200 shadow-sm overflow-hidden">
+            <div class="px-4 py-3 bg-his-50 border-b border-his-200 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 class="text-xs sm:text-sm font-bold text-his-900">Ra Y lệnh Điều trị — Ngày thứ ${p.currentDay}</h3>
+                <p class="text-[11px] text-slate-600">Kê chế độ chăm sóc, thuốc & dịch truyền theo Danh mục Bộ Y tế</p>
+              </div>
+              <div class="flex items-center gap-2">
+                ${pastDays.length > 0 ? `
+                  <button type="button" onclick="copyPreviousDayOrders()" class="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-300 text-xs font-semibold text-slate-700 transition">
+                    Sao chép y lệnh ngày trước
+                  </button>
+                ` : ""}
+              </div>
+            </div>
+
+            <div class="p-4 space-y-4">
+              <!-- Chế độ chăm sóc, dinh dưỡng, theo dõi, thủ thuật -->
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-700 mb-1">Chế độ chăm sóc</label>
+                  <select id="ordCareLevel" onchange="syncDraftOrderFields()" class="w-full px-2.5 py-2 text-xs border border-slate-300 rounded-xl bg-white">
+                    <option value="Chăm sóc Cấp I" ${p.draftOrder.careLevel === "Chăm sóc Cấp I" ? "selected" : ""}>Chăm sóc Cấp I (Nặng/Hồi sức)</option>
+                    <option value="Chăm sóc Cấp II" ${p.draftOrder.careLevel === "Chăm sóc Cấp II" ? "selected" : ""}>Chăm sóc Cấp II (Theo dõi sát)</option>
+                    <option value="Chăm sóc Cấp III" ${p.draftOrder.careLevel === "Chăm sóc Cấp III" ? "selected" : ""}>Chăm sóc Cấp III (Tự chăm sóc được)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-700 mb-1">Chế độ dinh dưỡng</label>
+                  <input id="ordDiet" type="text" value="${escapeHtml(p.draftOrder.diet)}" oninput="syncDraftOrderFields()" placeholder="VD: Nhịn ăn, Ăn lạt, Chế độ ĐTĐ..." class="w-full px-2.5 py-2 text-xs border border-slate-300 rounded-xl" />
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-700 mb-1">Y lệnh theo dõi</label>
+                  <input id="ordMonitoring" type="text" value="${escapeHtml(p.draftOrder.monitoring)}" oninput="syncDraftOrderFields()" placeholder="VD: Sinh hiệu mỗi 4h, nước tiểu 24h..." class="w-full px-2.5 py-2 text-xs border border-slate-300 rounded-xl" />
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-700 mb-1">Thủ thuật / Oxy / Hội chẩn</label>
+                  <input id="ordProcedures" type="text" value="${escapeHtml(p.draftOrder.procedures)}" oninput="syncDraftOrderFields()" placeholder="VD: Thở oxy 3L/p, Hội chẩn ERCP..." class="w-full px-2.5 py-2 text-xs border border-slate-300 rounded-xl" />
+                </div>
+              </div>
+
+              <!-- Chọn thuốc từ Danh mục Bộ Y tế & Danh sách thuốc đã kê -->
+              <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 pt-2 border-t border-slate-200">
+                <!-- Cột trái: Kho thuốc BYT -->
+                <div class="lg:col-span-6 border border-slate-200 rounded-xl overflow-hidden flex flex-col">
+                  <div class="p-2.5 bg-slate-50 border-b border-slate-200 space-y-2">
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs font-bold text-slate-700">Kho thuốc & Dịch truyền Bộ Y tế (${DRUG_CATALOG.length})</span>
+                      <button type="button" onclick="openCustomDrugModal()" class="text-[11px] font-semibold text-his-700 hover:underline">+ Thuốc ngoài danh mục</button>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                      <input id="drugSearchInput" type="text" value="${escapeHtml(appState.drugSearch)}" oninput="onDrugSearchInput(this.value)" placeholder="Tìm tên hoạt chất (Ceftriaxone, Furosemide...)" class="flex-1 px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg" />
+                      <select onchange="onDrugGroupChange(this.value)" class="px-2 py-1.5 text-xs border border-slate-300 rounded-lg bg-white">
+                        ${drugGroups.map(g => `<option value="${escapeHtml(g)}" ${appState.drugGroupFilter === g ? "selected" : ""}>${g === "ALL" ? "Tất cả nhóm" : escapeHtml(g)}</option>`).join("")}
+                      </select>
+                    </div>
+                  </div>
+                  <div class="max-h-72 overflow-y-auto divide-y divide-slate-100">
+                    ${filteredDrugs.map(d => `
+                      <div class="px-3 py-2 hover:bg-slate-50 flex items-center justify-between gap-2">
+                        <div class="min-w-0">
+                          <div class="flex flex-wrap items-center gap-1.5">
+                            <span class="text-xs font-semibold text-slate-800">${escapeHtml(d.name)}</span>
+                            ${bhytBadge(d.bhytType)}
+                          </div>
+                          <p class="text-[11px] text-slate-500">${escapeHtml(d.route)} • ĐVT: ${escapeHtml(d.unit)} • ${formatVND(d.price)}</p>
+                        </div>
+                        <button type="button" onclick="addDrugToDraft('${d.id}')" class="px-2.5 py-1 rounded-lg bg-his-50 hover:bg-his-100 text-his-700 border border-his-200 text-xs font-semibold shrink-0">
+                          + Kê
+                        </button>
+                      </div>
+                    `).join("")}
+                  </div>
+                </div>
+
+                <!-- Cột phải: Đơn thuốc / Dịch truyền đang kê cho ngày hiện tại -->
+                <div class="lg:col-span-6 border border-slate-200 rounded-xl overflow-hidden flex flex-col bg-slate-50/40">
+                  <div class="p-2.5 bg-slate-100 border-b border-slate-200 flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-800">Thuốc & Dịch truyền đã kê cho Ngày ${p.currentDay} (${p.draftOrder.drugs.length})</span>
+                    ${p.draftOrder.drugs.length > 0 ? `<button type="button" onclick="clearDraftDrugs()" class="text-[11px] text-rose-600 hover:underline">Xóa hết</button>` : ""}
+                  </div>
+                  <div class="p-2.5 space-y-2 max-h-72 overflow-y-auto flex-1">
+                    ${p.draftOrder.drugs.length === 0 ? `
+                      <div class="text-center py-8 text-xs text-slate-400">
+                        Chưa kê thuốc hoặc dịch truyền nào.<br>Chọn từ kho thuốc Bộ Y tế bên trái.
+                      </div>
+                    ` : p.draftOrder.drugs.map((dr, idx) => `
+                      <div class="p-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs space-y-2">
+                        <div class="flex items-start justify-between gap-2">
+                          <div class="min-w-0">
+                            <p class="text-xs font-bold text-slate-900">${idx + 1}. ${escapeHtml(dr.name)}</p>
+                            <p class="text-[11px] text-slate-500">${escapeHtml(dr.route)} • Đơn giá: ${formatVND(dr.unitPrice)} / ${escapeHtml(dr.unit)}</p>
+                          </div>
+                          <button type="button" onclick="removeDraftDrug(${idx})" class="text-rose-500 hover:text-rose-700 p-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                          </button>
+                        </div>
+                        <div class="grid grid-cols-12 gap-2">
+                          <div class="col-span-3">
+                            <label class="block text-[10px] text-slate-500">SL (${escapeHtml(dr.unit)})</label>
+                            <input type="number" min="1" max="100" value="${dr.qty}" onchange="updateDraftDrug(${idx}, 'qty', this.value)" class="w-full px-2 py-1 text-xs font-semibold border border-slate-300 rounded-lg" />
+                          </div>
+                          <div class="col-span-4">
+                            <label class="block text-[10px] text-slate-500">Thanh toán</label>
+                            <select onchange="updateDraftDrug(${idx}, 'paymentType', this.value)" class="w-full px-1.5 py-1 text-xs font-semibold border border-slate-300 rounded-lg bg-white">
+                              ${dr.bhytEligible && p.bhytRate > 0 ? `<option value="BHYT" ${dr.paymentType === "BHYT" ? "selected" : ""}>BHYT</option>` : ""}
+                              <option value="Thu phí" ${dr.paymentType === "Thu phí" ? "selected" : ""}>Thu phí</option>
+                            </select>
+                          </div>
+                          <div class="col-span-5 text-right flex flex-col justify-end">
+                            <span class="text-[10px] text-slate-500">Thành tiền</span>
+                            <span class="text-xs font-bold text-his-800">${formatVND(dr.unitPrice * dr.qty)}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <input type="text" value="${escapeHtml(dr.usage)}" onchange="updateDraftDrug(${idx}, 'usage', this.value)" placeholder="Cách dùng / Tốc độ truyền..." class="w-full px-2.5 py-1 text-xs border border-slate-300 rounded-lg bg-slate-50 focus:bg-white" />
+                        </div>
+                      </div>
+                    `).join("")}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Thanh hành động chốt Y lệnh sang ngày hôm sau -->
+              <div class="pt-3 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <p class="text-xs text-slate-500">
+                  Khi xác nhận, AI sẽ phân tích y lệnh của bạn và mô phỏng diễn tiến bệnh nhân sau <strong>24 giờ điều trị</strong>.
+                </p>
+                <button type="button" onclick="confirmOrdersAndNextDay()" class="w-full sm:w-auto px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold shadow-md flex items-center justify-center gap-2 transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                  Xác nhận Y lệnh & Sang ngày điều trị tiếp theo (AI Mô phỏng)
+                </button>
+              </div>
+            </div>
+          </div>
+          ` : `
+            <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center text-xs sm:text-sm text-emerald-900">
+              Ca bệnh này đã kết thúc điều trị và có bảng điểm tổng kết. Bạn có thể xem lại bảng điểm hoặc chuyển sang bệnh nhân khác để tiếp tục luyện tập.
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    function syncDraftOrderFields() {
+      const p = getCurrentPatient();
+      if (!document.getElementById("ordCareLevel")) return;
+      p.draftOrder.careLevel = document.getElementById("ordCareLevel").value;
+      p.draftOrder.diet = document.getElementById("ordDiet").value;
+      p.draftOrder.monitoring = document.getElementById("ordMonitoring").value;
+      p.draftOrder.procedures = document.getElementById("ordProcedures").value;
+      saveState();
+    }
+
+    function onDrugSearchInput(val) {
+      appState.drugSearch = val;
+      renderActiveTab();
+      const inp = document.getElementById("drugSearchInput");
+      if (inp) { inp.focus(); inp.setSelectionRange(val.length, val.length); }
+    }
+
+    function onDrugGroupChange(val) {
+      appState.drugGroupFilter = val;
+      renderActiveTab();
+    }
+
+    function addDrugToDraft(drugId) {
+      syncDraftOrderFields();
+      const p = getCurrentPatient();
+      const d = DRUG_CATALOG.find(item => item.id === drugId);
+      if (!d) return;
+      const bhytEligible = d.bhytType !== "Thu phí";
+      const paymentType = (bhytEligible && p.bhytRate > 0) ? "BHYT" : "Thu phí";
+      p.draftOrder.drugs.push({
+        id: d.id,
+        name: d.name,
+        unit: d.unit,
+        route: d.route,
+        qty: 1,
+        usage: d.defaultUsage,
+        bhytType: d.bhytType,
+        bhytEligible,
+        paymentType,
+        unitPrice: d.price
+      });
+      saveState();
+      renderActiveTab();
+    }
+
+    function updateDraftDrug(idx, field, val) {
+      const p = getCurrentPatient();
+      if (!p.draftOrder.drugs[idx]) return;
+      if (field === "qty") {
+        p.draftOrder.drugs[idx].qty = Math.max(1, parseInt(val, 10) || 1);
+      } else {
+        p.draftOrder.drugs[idx][field] = val;
+      }
+      saveState();
+      if (field === "qty" || field === "paymentType") renderActiveTab();
+    }
+
+    function removeDraftDrug(idx) {
+      const p = getCurrentPatient();
+      p.draftOrder.drugs.splice(idx, 1);
+      saveState();
+      renderActiveTab();
+    }
+
+    function clearDraftDrugs() {
+      const p = getCurrentPatient();
+      p.draftOrder.drugs = [];
+      saveState();
+      renderActiveTab();
+    }
+
+    function copyPreviousDayOrders() {
+      const p = getCurrentPatient();
+      const pastDays = p.treatmentDays.filter(d => d.orders !== null);
+      if (pastDays.length === 0) return;
+      const prev = pastDays[pastDays.length - 1].orders;
+      p.draftOrder = JSON.parse(JSON.stringify(prev));
+      saveState();
+      renderActiveTab();
+      showToast("Đã sao chép y lệnh từ ngày điều trị trước.", "info");
+    }
+
+    function openCustomDrugModal() {
+      const p = getCurrentPatient();
+      openGenericModal({
+        title: "Thêm thuốc / Dịch truyền ngoài danh mục nhanh",
+        bodyHtml: `
+          <div class="space-y-3 text-xs">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Tên thuốc / Hoạt chất & Hàm lượng *</label>
+              <input id="customDrugName" type="text" placeholder="VD: Dobutamine 250mg, Ceftazidime 1g..." class="w-full px-3 py-2 border border-slate-300 rounded-xl" />
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Đơn vị</label>
+                <input id="customDrugUnit" type="text" value="Ống" class="w-full px-3 py-2 border border-slate-300 rounded-xl" />
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Số lượng</label>
+                <input id="customDrugQty" type="number" min="1" value="1" class="w-full px-3 py-2 border border-slate-300 rounded-xl" />
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Đơn giá (VNĐ)</label>
+                <input id="customDrugPrice" type="number" min="0" value="50000" class="w-full px-3 py-2 border border-slate-300 rounded-xl" />
+              </div>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Đường dùng & Cách dùng chi tiết *</label>
+              <input id="customDrugUsage" type="text" placeholder="VD: Pha 50ml NaCl 0.9% bơm tiêm điện..." class="w-full px-3 py-2 border border-slate-300 rounded-xl" />
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Đối tượng thanh toán</label>
+              <select id="customDrugPay" class="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white">
+                ${p.bhytRate > 0 ? `<option value="BHYT">BHYT</option>` : ""}
+                <option value="Thu phí">Thu phí</option>
+              </select>
+            </div>
+          </div>
+        `,
+        footerHtml: `
+          <button type="button" onclick="closeGenericModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700">Hủy</button>
+          <button type="button" onclick="saveCustomDrug()" class="px-4 py-2 rounded-xl bg-his-600 hover:bg-his-700 text-white text-xs font-semibold">Thêm vào y lệnh</button>
+        `
+      });
+    }
+
+    function saveCustomDrug() {
+      const name = document.getElementById("customDrugName").value.trim();
+      const unit = document.getElementById("customDrugUnit").value.trim() || "Lọ";
+      const qty = Math.max(1, parseInt(document.getElementById("customDrugQty").value, 10) || 1);
+      const price = Math.max(0, parseInt(document.getElementById("customDrugPrice").value, 10) || 0);
+      const usage = document.getElementById("customDrugUsage").value.trim() || "Dùng theo y lệnh";
+      const paymentType = document.getElementById("customDrugPay").value;
+      if (!name) {
+        showToast("Vui lòng nhập tên thuốc.", "warn");
+        return;
+      }
+      const p = getCurrentPatient();
+      p.draftOrder.drugs.push({
+        id: "CUSTOM-" + Date.now(),
+        name, unit, route: "Theo chỉ định", qty, usage,
+        bhytType: paymentType === "BHYT" ? "BHYT" : "Thu phí",
+        bhytEligible: paymentType === "BHYT",
+        paymentType,
+        unitPrice: price
+      });
+      saveState();
+      closeGenericModal();
+      renderActiveTab();
+      showToast("Đã thêm thuốc vào y lệnh.", "success");
+    }
+
+    /**
+     * Chốt y lệnh ngày hiện tại và gọi Gemini AI mô phỏng diễn tiến sau 24 giờ điều trị
+     */
+    async function confirmOrdersAndNextDay() {
+      syncDraftOrderFields();
+      const p = getCurrentPatient();
+
+      if (p.draftOrder.drugs.length === 0 && !p.draftOrder.procedures.trim()) {
+        openGenericModal({
+          title: "Xác nhận y lệnh trống?",
+          bodyHtml: `<p class="text-sm text-slate-700">Bạn chưa kê thuốc/dịch truyền hoặc thủ thuật nào cho <strong>Ngày điều trị thứ ${p.currentDay}</strong>. Nếu tiếp tục, bệnh nhân sẽ chỉ được theo dõi mà không có thuốc điều trị trong 24 giờ tới. Bạn có chắc muốn tiếp tục?</p>`,
+          footerHtml: `
+            <button type="button" onclick="closeGenericModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700">Quay lại kê thuốc</button>
+            <button type="button" onclick="closeGenericModal(); executeNextDaySimulation();" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold">Vẫn sang ngày tiếp theo</button>
+          `
+        });
+        return;
+      }
+      executeNextDaySimulation();
+    }
+
+    async function executeNextDaySimulation() {
+      const p = getCurrentPatient();
+      const committedOrder = JSON.parse(JSON.stringify(p.draftOrder));
+      // Tính sẵn chi phí từng thuốc tại thời điểm chốt
+      committedOrder.drugs = committedOrder.drugs.map(dr => {
+        const cost = calcItemCost(dr.unitPrice, dr.qty, dr.paymentType, p.bhytRate, dr.bhytEligible);
+        return { ...dr, total: cost.total, bhytPays: cost.bhytPays, patientPays: cost.patientPays };
+      });
+
+      showLoading(`Đang mô phỏng diễn tiến lâm sàng sau 24 giờ điều trị (Ngày ${p.currentDay} → Ngày ${p.currentDay + 1})...`);
+
+      try {
+        const labsText = p.labOrders.map(o =>
+          `Ngày ${o.day}: ` +
+          (o.labResults || []).map(r => `${r.testName}: ${r.value} ${r.unit} (${r.flag})`).join("; ") +
+          " | " +
+          (o.imagingResults || []).map(i => `${i.serviceName}: ${i.conclusion}`).join("; ")
+        ).join("\n");
+
+        const historyDays = p.treatmentDays.map(d =>
+          `Ngày ${d.day} (M:${d.vitals.hr}, HA:${d.vitals.bp}, T:${d.vitals.temp}, SpO2:${d.vitals.spo2}%): ${d.progression}`
+        ).join("\n");
+
+        const orderSummary = `
+- Chăm sóc: ${committedOrder.careLevel}
+- Dinh dưỡng: ${committedOrder.diet}
+- Theo dõi: ${committedOrder.monitoring}
+- Thủ thuật / Oxy / Hội chẩn: ${committedOrder.procedures || "Không"}
+- Thuốc & Dịch truyền:
+${committedOrder.drugs.length > 0 ? committedOrder.drugs.map(d => `  + ${d.name} x ${d.qty} ${d.unit} (${d.usage}) [${d.paymentType}]`).join("\n") : "  + Không kê thuốc"}`;
+
+        const prompt = `
+Bạn là Hệ thống Mô phỏng Sinh lý bệnh & Bác sĩ Trưởng khoa giàu kinh nghiệm tại bệnh viện Việt Nam.
+Hãy đánh giá y lệnh của Ngày điều trị thứ ${p.currentDay} và mô phỏng diễn tiến lâm sàng thực tế của NGÀY ĐIỀU TRỊ THỨ ${p.currentDay + 1} (sau 24 giờ).
+
+HỒ SƠ BỆNH NHÂN:
+- ${p.name}, ${p.age} tuổi, ${p.gender}, Khoa ${p.department}
+- BỆNH LÝ THỰC SỰ: ${p.hiddenTruth.actualDiagnosis}
+- HƯỚNG XỬ TRÍ CHUẨN: ${p.hiddenTruth.optimalManagement}
+- CHẨN ĐOÁN HIỆN TẠI CỦA NGƯỜI HỌC: Sơ bộ: "${p.record.prelimDiagnosis}" | Xác định: "${p.record.finalDiagnosis}"
+- KẾT QUẢ CLS ĐÃ CÓ:
+${labsText || "Chưa làm CLS nào"}
+- DIỄN TIẾN CÁC NGÀY TRƯỚC:
+${historyDays}
+
+Y LỆNH NGƯỜI HỌC VỪA KÊ CHO NGÀY ${p.currentDay}:
+${orderSummary}
+
+NGUYÊN TẮC MÔ PHỎNG Y KHOA NGHIÊM TÚC:
+1. Nếu y lệnh trúng đích (đúng kháng sinh/lợi tiểu/dịch truyền/oxy/dinh dưỡng/thủ thuật): sinh hiệu và triệu chứng cải thiện thực tế theo đúng tốc độ sinh lý bệnh (không khỏi thần tốc vô lý sau 1 ngày, nhưng sốt giảm, SpO2 tăng, tiểu tốt, đau giảm...).
+2. Nếu y lệnh thiếu bước quan trọng (VD: viêm đường mật mà không kháng sinh đúng phổ/cho ăn bình thường; suy tim mất bù mà truyền nhiều NaCl 0.9% hoặc không dùng lợi tiểu; viêm phổi trên nền ĐTĐ mà quên kiểm soát đường huyết hoặc tiếp tục Metformin khi giảm oxy): bệnh nhân cải thiện kém, diễn tiến nặng lên hoặc xuất hiện tác dụng phụ/biến chứng hợp lý.
+3. Trong mục "attendingFeedback", hãy viết nhận xét sâu sắc của Bác sĩ Trưởng khoa về y lệnh ngày ${p.currentDay} (khen điểm đúng, chỉ rõ lỗi sai/nguy cơ tương tác thuốc/lỗi BHYT nếu có, gợi ý điều chỉnh).
+
+TRẢ VỀ DUY NHẤT JSON:
+{
+  "nextVitals": {
+    "hr": 92,
+    "bp": "120/75",
+    "temp": 37.6,
+    "rr": 20,
+    "spo2": 96,
+    "gcs": "15đ (Tỉnh, đỡ mệt)"
+  },
+  "nextStatus": "Cấp cứu" | "Nặng" | "Đang theo dõi" | "Ổn định",
+  "nextProgression": "Mô tả chi tiết diễn tiến lâm sàng sáng ngày tiếp theo (cơ năng, thực thể, nước tiểu, dẫn lưu/can thiệp nếu đã hội chẩn...)",
+  "nextNursingNote": "Ghi chú thực tế của điều dưỡng trong ca trực đêm vừa qua",
+  "attendingFeedback": "Phản hồi chuyên môn súc tích, rõ ràng của Bác sĩ Trưởng khoa cho y lệnh ngày vừa rồi"
+}`;
+
+        const res = await callGeminiAPI({
+          systemPrompt: "Bạn là chuyên gia mô phỏng lâm sàng y khoa Việt Nam. Trả về JSON chuẩn xác, trung thực về mặt y học.",
+          userPrompt: prompt,
+          expectJson: true
+        });
+
+        // Chốt y lệnh vào ngày hiện tại
+        const currDayObj = p.treatmentDays[p.treatmentDays.length - 1];
+        currDayObj.orders = committedOrder;
+        currDayObj.attendingFeedback = res.attendingFeedback || "Đã ghi nhận y lệnh.";
+
+        // Tạo ngày điều trị tiếp theo
+        const nextDayNum = p.currentDay + 1;
+        const baseDate = new Date(2026, 10, 25 + (nextDayNum - 1), 7, 30);
+        const dateStr = `${String(baseDate.getDate()).padStart(2, "0")}/${String(baseDate.getMonth() + 1).padStart(2, "0")}/${baseDate.getFullYear()} 07:30`;
+
+        const nextVitals = {
+          day: nextDayNum,
+          time: dateStr,
+          hr: res.nextVitals?.hr ?? currDayObj.vitals.hr,
+          bp: res.nextVitals?.bp ?? currDayObj.vitals.bp,
+          temp: res.nextVitals?.temp ?? currDayObj.vitals.temp,
+          rr: res.nextVitals?.rr ?? currDayObj.vitals.rr,
+          spo2: res.nextVitals?.spo2 ?? currDayObj.vitals.spo2,
+          gcs: res.nextVitals?.gcs ?? "15đ (Tỉnh)"
+        };
+
+        p.currentDay = nextDayNum;
+        if (["Cấp cứu", "Nặng", "Đang theo dõi", "Ổn định"].includes(res.nextStatus)) {
+          p.status = res.nextStatus;
+        }
+        p.vitalsHistory.push(nextVitals);
+        p.treatmentDays.push({
+          day: nextDayNum,
+          dateTime: dateStr,
+          vitals: nextVitals,
+          progression: res.nextProgression || "Bệnh nhân tiếp tục được theo dõi tại khoa.",
+          nursingNote: res.nextNursingNote || "Điều dưỡng theo dõi sát sinh hiệu.",
+          orders: null,
+          attendingFeedback: null
+        });
+
+        // Giữ lại khung chăm sóc/dinh dưỡng, xóa danh sách thuốc nháp để người học chủ động kê hoặc bấm sao chép
+        p.draftOrder = {
+          careLevel: committedOrder.careLevel,
+          diet: committedOrder.diet,
+          monitoring: committedOrder.monitoring,
+          procedures: "",
+          drugs: []
+        };
+
+        saveState();
+        renderAll();
+        showToast(`Đã sang Ngày điều trị thứ ${nextDayNum}! Xem diễn tiến mới trên Tờ điều trị.`, "success");
+      } catch (err) {
+        showToast("Lỗi khi mô phỏng diễn tiến ngày mới: " + err.message, "error");
+      } finally {
+        hideLoading();
+      }
+    }
+
+    /* =====================================================================
+     * TAB 4: TỔNG HỢP CHI PHÍ BHYT / THU PHÍ
+     * ===================================================================== */
+    function renderTabBilling(container) {
+      const p = getCurrentPatient();
+      const rows = [];
+
+      // Gom tất cả dịch vụ Cận lâm sàng
+      p.labOrders.forEach(order => {
+        (order.orderedItems || []).forEach(item => {
+          rows.push({
+            day: `Ngày ${order.day}`,
+            category: "Cận lâm sàng",
+            name: item.name,
+            qty: 1,
+            unit: "Lần",
+            unitPrice: item.unitPrice,
+            paymentType: item.paymentType,
+            total: item.unitPrice,
+            bhytPays: item.bhytPays,
+            patientPays: item.patientPays,
+            note: ""
+          });
+        });
+      });
+
+      // Gom tất cả Thuốc & Dịch truyền đã xác nhận trên tờ điều trị
+      p.treatmentDays.forEach(td => {
+        if (!td.orders) return;
+        (td.orders.drugs || []).forEach(dr => {
+          rows.push({
+            day: `Ngày ${td.day}`,
+            category: "Thuốc & Dịch truyền",
+            name: dr.name,
+            qty: dr.qty,
+            unit: dr.unit,
+            unitPrice: dr.unitPrice,
+            paymentType: dr.paymentType,
+            total: dr.total ?? (dr.unitPrice * dr.qty),
+            bhytPays: dr.bhytPays ?? 0,
+            patientPays: dr.patientPays ?? (dr.unitPrice * dr.qty),
+            note: dr.bhytType === "BHYT có điều kiện" && dr.paymentType === "BHYT" ? "Cần ghi rõ chỉ định/hội chẩn tránh xuất toán" : ""
+          });
+        });
+      });
+
+      const sumTotal = rows.reduce((s, r) => s + r.total, 0);
+      const sumBhyt = rows.reduce((s, r) => s + r.bhytPays, 0);
+      const sumPatient = rows.reduce((s, r) => s + r.patientPays, 0);
+      const bhytRatio = sumTotal > 0 ? Math.round((sumBhyt / sumTotal) * 100) : 0;
+
+      container.innerHTML = `
+        <div class="max-w-6xl mx-auto space-y-5">
+          <!-- 3 Thẻ tổng quan tài chính -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs">
+              <p class="text-xs font-semibold text-slate-500">Tổng chi phí khám chữa bệnh</p>
+              <p class="text-xl font-bold text-slate-900 mt-1">${formatVND(sumTotal)}</p>
+              <p class="text-[11px] text-slate-500 mt-1">${rows.length} khoản mục đã chỉ định</p>
+            </div>
+            <div class="bg-emerald-50 rounded-2xl border border-emerald-200 p-4 shadow-xs">
+              <p class="text-xs font-semibold text-emerald-700">Quỹ BHYT thanh toán (${escapeHtml(p.insuranceType)})</p>
+              <p class="text-xl font-bold text-emerald-800 mt-1">${formatVND(sumBhyt)}</p>
+              <p class="text-[11px] text-emerald-700 mt-1">Chiếm ${bhytRatio}% tổng viện phí</p>
+            </div>
+            <div class="bg-rose-50 rounded-2xl border border-rose-200 p-4 shadow-xs">
+              <p class="text-xs font-semibold text-rose-700">Bệnh nhân tự trả (Đồng chi trả + Thu phí)</p>
+              <p class="text-xl font-bold text-rose-800 mt-1">${formatVND(sumPatient)}</p>
+              <p class="text-[11px] text-rose-700 mt-1">Bao gồm đồng chi trả & dịch vụ yêu cầu</p>
+            </div>
+          </div>
+
+          <!-- Bảng kê chi tiết -->
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <h2 class="text-xs sm:text-sm font-bold uppercase text-his-900">Bảng kê Chi phí Khám bệnh, Chữa bệnh Nội trú</h2>
+              <span class="text-xs text-slate-500">Số thẻ BHYT: <strong class="font-mono">${escapeHtml(p.bhytCard || "Không có")}</strong></span>
+            </div>
+
+            ${rows.length === 0 ? `
+              <div class="p-8 text-center text-xs sm:text-sm text-slate-500">
+                Chưa phát sinh chi phí nào. Chi phí sẽ tự động cập nhật sau khi bạn gửi chỉ định Cận lâm sàng hoặc xác nhận Tờ điều trị.
+              </div>
+            ` : `
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs min-w-[720px]">
+                  <thead class="bg-slate-100 border-b border-slate-200 text-slate-700">
+                    <tr>
+                      <th class="py-2.5 px-3 font-semibold">Ngày</th>
+                      <th class="py-2.5 px-3 font-semibold">Phân loại</th>
+                      <th class="py-2.5 px-3 font-semibold">Tên dịch vụ / Thuốc</th>
+                      <th class="py-2.5 px-3 font-semibold text-center">SL</th>
+                      <th class="py-2.5 px-3 font-semibold text-center">Nguồn TT</th>
+                      <th class="py-2.5 px-3 font-semibold text-right">Thành tiền</th>
+                      <th class="py-2.5 px-3 font-semibold text-right text-emerald-700">BHYT trả</th>
+                      <th class="py-2.5 px-3 font-semibold text-right text-rose-700">BN tự trả</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100">
+                    ${rows.map(r => `
+                      <tr class="hover:bg-slate-50">
+                        <td class="py-2.5 px-3 font-medium text-slate-600">${escapeHtml(r.day)}</td>
+                        <td class="py-2.5 px-3">
+                          <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold ${r.category === "Cận lâm sàng" ? "bg-sky-50 text-sky-700" : "bg-indigo-50 text-indigo-700"}">${escapeHtml(r.category)}</span>
+                        </td>
+                        <td class="py-2.5 px-3">
+                          <p class="font-medium text-slate-800">${escapeHtml(r.name)}</p>
+                          ${r.note ? `<p class="text-[10px] text-amber-700 mt-0.5">⚠ ${escapeHtml(r.note)}</p>` : ""}
+                        </td>
+                        <td class="py-2.5 px-3 text-center">${r.qty} ${escapeHtml(r.unit)}</td>
+                        <td class="py-2.5 px-3 text-center">
+                          <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${r.paymentType === "BHYT" ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"}">${escapeHtml(r.paymentType)}</span>
+                        </td>
+                        <td class="py-2.5 px-3 text-right font-semibold">${formatVND(r.total)}</td>
+                        <td class="py-2.5 px-3 text-right font-semibold text-emerald-700">${formatVND(r.bhytPays)}</td>
+                        <td class="py-2.5 px-3 text-right font-semibold text-rose-700">${formatVND(r.patientPays)}</td>
+                      </tr>
+                    `).join("")}
+                  </tbody>
+                  <tfoot class="bg-slate-100 font-bold border-t-2 border-slate-300">
+                    <tr>
+                      <td colspan="5" class="py-3 px-3 text-right uppercase text-slate-700">Tổng cộng:</td>
+                      <td class="py-3 px-3 text-right text-slate-900">${formatVND(sumTotal)}</td>
+                      <td class="py-3 px-3 text-right text-emerald-800">${formatVND(sumBhyt)}</td>
+                      <td class="py-3 px-3 text-right text-rose-800">${formatVND(sumPatient)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            `}
+          </div>
+        </div>
+      `;
+    }
+
+    /*************************************************************************
+     * 10. TẠO CA LÂM SÀNG MỚI BẰNG GEMINI AI
+     *************************************************************************/
+    async function createNewAICase() {
+      const specialty = document.getElementById("newCaseSpecialty").value;
+      const difficulty = document.querySelector('input[name="newCaseDifficulty"]:checked')?.value || "Trung bình";
+      const topic = document.getElementById("newCaseTopic").value.trim();
+
+      document.getElementById("modalNewCase").classList.add("hidden");
+      showLoading(`Đang tiếp nhận bệnh nhân mới vào khoa ${specialty}...`);
+
+      try {
+        const prompt = `
+Hãy tạo 1 ca lâm sàng nhập viện nội trú hoàn toàn mới, thực tế tại bệnh viện Việt Nam cho chuyên khoa: "${specialty}", độ khó: "${difficulty}"${topic ? `, gợi ý chủ đề: "${topic}"` : ""}.
+
+Yêu cầu:
+- Tên bệnh nhân thuần Việt (viết IN HOA), địa chỉ Việt Nam, nghề nghiệp thực tế, tuổi/giới phù hợp chuyên khoa (nếu Nhi khoa thì tuổi 1-14; nếu Sản phụ khoa thì giới Nữ).
+- Tránh trùng lặp các bệnh đã có mẫu sẵn (viêm đường mật do sỏi OMC, suy tim mất bù, viêm phổi cộng đồng ở nam 54T).
+- Các thông số sinh hiệu và triệu chứng phải mạch lạc, có dấu hiệu lâm sàng sắc nét để người học biện luận.
+- Trả về DUY NHẤT JSON đúng cấu trúc sau:
+{
+  "name": "HỌ TÊN IN HOA",
+  "age": 45,
+  "gender": "Nam" | "Nữ",
+  "occupation": "Nghề nghiệp",
+  "address": "Quận/Huyện, Tỉnh/TP",
+  "department": "${specialty}",
+  "bed": "P.XXX - G.XX",
+  "insuranceType": "BHYT 80%" | "BHYT 100%" | "Thu phí",
+  "bhytRate": 80,
+  "bhytCard": "GD 4 79 1234567890 (hoặc chuỗi rỗng nếu Thu phí)",
+  "status": "Cấp cứu" | "Nặng" | "Đang theo dõi" | "Ổn định",
+  "admissionSnapshot": {
+    "chiefComplaint": "Lý do vào viện ngắn gọn",
+    "history": "Bệnh sử chi tiết 4-6 câu chuẩn y khoa Việt Nam",
+    "pastHistory": "Tiền sử bản thân, dị ứng thuốc, gia đình",
+    "initialExam": "Khám toàn thân và các cơ quan (Tim mạch, Hô hấp, Tiêu hóa, Thần kinh...)"
+  },
+  "initialVitals": {
+    "hr": 100,
+    "bp": "120/80",
+    "temp": 38.2,
+    "rr": 20,
+    "spo2": 97,
+    "gcs": "15đ (Tỉnh, tiếp xúc tốt)"
+  },
+  "initialProgression": "Mô tả tình trạng bệnh nhân khi mới nhận vào khoa điều trị Ngày 1",
+  "initialNursingNote": "Ghi nhận ban đầu của điều dưỡng",
+  "hiddenTruth": {
+    "actualDiagnosis": "Chẩn đoán xác định thực sự đầy đủ mức độ/biến chứng/bệnh kèm",
+    "keyLabs": "Tóm tắt các kết quả CLS đặc trưng của ca bệnh này để hệ thống trả kết quả nhất quán",
+    "optimalManagement": "Nguyên tắc xử trí chuẩn theo hướng dẫn Bộ Y tế Việt Nam và những bẫy lâm sàng cần tránh"
+  }
+}`;
+
+        const res = await callGeminiAPI({
+          systemPrompt: "Bạn là Giảng viên Y khoa xây dựng ngân hàng ca bệnh mô phỏng cho hệ thống EMR Việt Nam. Luôn trả JSON hợp lệ 100% tiếng Việt.",
+          userPrompt: prompt,
+          expectJson: true,
+          temperature: 0.75
+        });
+
+        const newId = "BA-" + String(Date.now()).slice(-6);
+        const nowStr = "25/11/2026 08:15";
+        const vitals = {
+          day: 1,
+          time: nowStr,
+          hr: res.initialVitals?.hr ?? 90,
+          bp: res.initialVitals?.bp ?? "120/80",
+          temp: res.initialVitals?.temp ?? 37.2,
+          rr: res.initialVitals?.rr ?? 20,
+          spo2: res.initialVitals?.spo2 ?? 98,
+          gcs: res.initialVitals?.gcs ?? "15đ (Tỉnh)"
+        };
+
+        const newPatient = {
+          id: newId,
+          name: (res.name || "BỆNH NHÂN MỚI").toUpperCase(),
+          age: res.age || 45,
+          gender: res.gender || "Nam",
+          occupation: res.occupation || "Lao động tự do",
+          address: res.address || "TP. Hồ Chí Minh",
+          department: res.department || specialty,
+          bed: res.bed || "P.105 - G.01",
+          admissionTime: nowStr,
+          currentDay: 1,
+          insuranceType: res.insuranceType || "BHYT 80%",
+          bhytRate: typeof res.bhytRate === "number" ? res.bhytRate : (res.insuranceType === "Thu phí" ? 0 : 80),
+          bhytCard: res.bhytCard || "",
+          status: ["Cấp cứu", "Nặng", "Đang theo dõi", "Ổn định"].includes(res.status) ? res.status : "Đang theo dõi",
+          discharged: false,
+          admissionSnapshot: res.admissionSnapshot || {
+            chiefComplaint: "Đau bụng cấp",
+            history: "Đang cập nhật",
+            pastHistory: "Chưa ghi nhận dị ứng",
+            initialExam: "Đang cập nhật"
+          },
+          record: {
+            chiefComplaint: res.admissionSnapshot?.chiefComplaint || "",
+            history: "",
+            pastHistory: res.admissionSnapshot?.pastHistory || "",
+            exam: "",
+            summary: "",
+            prelimDiagnosis: "",
+            diffDiagnosis: "",
+            finalDiagnosis: "",
+            icd10: ""
+          },
+          hiddenTruth: res.hiddenTruth || {
+            actualDiagnosis: "Đang theo dõi",
+            keyLabs: "Các chỉ số phù hợp lâm sàng",
+            optimalManagement: "Điều trị theo phác đồ Bộ Y tế"
+          },
+          vitalsHistory: [vitals],
+          labOrders: [],
+          treatmentDays: [
+            {
+              day: 1,
+              dateTime: nowStr,
+              vitals,
+              progression: res.initialProgression || "Bệnh nhân mới nhập khoa, chờ thăm khám và ra y lệnh điều trị.",
+              nursingNote: res.initialNursingNote || "Đã tiếp nhận bệnh nhân vào giường bệnh.",
+              orders: null,
+              attendingFeedback: null
+            }
+          ],
+          draftOrder: {
+            careLevel: "Chăm sóc Cấp II",
+            diet: "Chế độ ăn bệnh lý theo chỉ định",
+            monitoring: "Theo dõi mạch, huyết áp, nhiệt độ, SpO2 mỗi 4-6 giờ",
+            procedures: "",
+            drugs: []
+          },
+          consultChat: [],
+          recordFeedback: null,
+          finalEvaluation: null
+        };
+
+        appState.patients.unshift(newPatient);
+        appState.selectedPatientId = newPatient.id;
+        appState.activeTab = "record";
+        appState.labCart = [];
+        saveState();
+        renderAll();
+        showToast(`Đã tiếp nhận bệnh nhân ${newPatient.name} vào khoa ${newPatient.department}!`, "success");
+      } catch (err) {
+        showToast("Không thể tạo ca bệnh mới: " + err.message, "error");
+      } finally {
+        hideLoading();
+      }
+    }
+
+    /*************************************************************************
+     * 11. KẾT THÚC CA / XUẤT VIỆN & TỔNG KẾT ĐÁNH GIÁ 4 TIÊU CHÍ (AI)
+     *************************************************************************/
+    function confirmDischargeAndEvaluate() {
+      const p = getCurrentPatient();
+      openGenericModal({
+        title: "Kết thúc ca điều trị & Chấm điểm tổng kết AI",
+        bodyHtml: `
+          <p class="text-sm text-slate-700">Hệ thống AI sẽ chấm điểm toàn diện quá trình thực hành của bạn trên bệnh nhân <strong>${escapeHtml(p.name)}</strong> (hiện tại Ngày ĐT thứ ${p.currentDay}) theo 4 tiêu chí:</p>
+          <ul class="list-disc list-inside text-xs text-slate-600 space-y-1 bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <li>Kỹ năng làm hồ sơ bệnh án & Biện luận chẩn đoán (10 điểm)</li>
+            <li>Chỉ định Cận lâm sàng hợp lý & Tuân thủ BHYT (10 điểm)</li>
+            <li>Y lệnh Điều trị, An toàn thuốc & Dịch truyền (10 điểm)</li>
+            <li>Kỹ năng xử trí diễn tiến lâm sàng qua các ngày (10 điểm)</li>
+          </ul>
+          <p class="text-xs text-amber-700">Lưu ý: Sau khi tổng kết, ca bệnh sẽ chuyển sang trạng thái <strong>Đã xuất viện</strong> và công bố chẩn đoán chuẩn cùng phác đồ tối ưu.</p>
+        `,
+        footerHtml: `
+          <button type="button" onclick="closeGenericModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700">Tiếp tục điều trị</button>
+          <button type="button" onclick="closeGenericModal(); runFinalEvaluation();" class="px-4 py-2 rounded-xl bg-his-600 hover:bg-his-700 text-white text-xs font-semibold">Xác nhận & Chấm điểm</button>
+        `
+      });
+    }
+
+    async function runFinalEvaluation() {
+      readRecordFormIntoPatient();
+      const p = getCurrentPatient();
+      showLoading("Hội đồng chuyên môn AI đang tổng hợp bệnh án và chấm điểm...");
+
+      try {
+        const labsList = p.labOrders.flatMap(o => (o.orderedItems || []).map(i => `${i.name} (${i.paymentType})`)).join(", ");
+        const treatmentLog = p.treatmentDays.map(d =>
+          `Ngày ${d.day}: ${d.progression} | Y lệnh: ${d.orders ? `${d.orders.careLevel}, ${d.orders.diet}, Thủ thuật: ${d.orders.procedures || "Không"}, Thuốc: ${d.orders.drugs.map(dr => dr.name + " x" + dr.qty + " (" + dr.usage + ")").join("; ")}` : "Chưa chốt y lệnh"}`
+        ).join("\n");
+
+        const prompt = `
+Hãy đánh giá tổng kết năng lực lâm sàng của người học trên ca bệnh EMR sau:
+
+ĐÁP ÁN CHUẨN CỦA CA BỆNH:
+- Chẩn đoán thực sự: ${p.hiddenTruth.actualDiagnosis}
+- Phác đồ tối ưu: ${p.hiddenTruth.optimalManagement}
+
+BÀI LÀM CỦA NGƯỜI HỌC:
+- Tóm tắt bệnh án: ${p.record.summary || "(Trống)"}
+- Chẩn đoán sơ bộ: ${p.record.prelimDiagnosis || "(Trống)"}
+- Chẩn đoán phân biệt: ${p.record.diffDiagnosis || "(Trống)"}
+- Chẩn đoán xác định: ${p.record.finalDiagnosis || "(Trống)"} | ICD-10: ${p.record.icd10 || "(Trống)"}
+- Các CLS đã chỉ định: ${labsList || "(Chưa chỉ định CLS nào)"}
+- Quá trình điều trị:
+${treatmentLog}
+
+Hãy chấm điểm công tâm (thang điểm 10 cho mỗi tiêu chí, tổng 40 điểm) và trả về DUY NHẤT JSON:
+{
+  "scores": {
+    "recordAndDiagnosis": { "score": 8, "comment": "Nhận xét chi tiết..." },
+    "labsAndBhyt": { "score": 8, "comment": "Nhận xét về tính cần thiết, đầy đủ và tránh lãng phí/xuất toán BHYT..." },
+    "treatmentAndSafety": { "score": 7, "comment": "Nhận xét về kháng sinh, liều lượng, dịch truyền, tương tác/chống chỉ định..." },
+    "progressionHandling": { "score": 8, "comment": "Nhận xét về theo dõi và xử trí diễn tiến..." }
+  },
+  "totalScore": 31,
+  "rating": "Xuất sắc" | "Giỏi" | "Khá" | "Trung bình" | "Cần ôn tập thêm",
+  "keyTakeaways": ["Bài học lâm sàng cốt lõi 1", "Bài học 2", "Bài học 3"]
+}`;
+
+        const res = await callGeminiAPI({
+          systemPrompt: "Bạn là Chủ tịch Hội đồng chấm thi lâm sàng bệnh viện Việt Nam. Đánh giá khách quan, chuẩn mực y khoa, trả về JSON hợp lệ.",
+          userPrompt: prompt,
+          expectJson: true
+        });
+
+        p.finalEvaluation = res;
+        p.discharged = true;
+        p.status = "Đã xuất viện";
+        saveState();
+        renderAll();
+        showFinalEvaluationModal();
+      } catch (err) {
+        showToast("Lỗi khi tổng kết đánh giá: " + err.message, "error");
+      } finally {
+        hideLoading();
+      }
+    }
+
+    function showFinalEvaluationModal() {
+      const p = getCurrentPatient();
+      const ev = p.finalEvaluation;
+      if (!ev) return;
+
+      const s = ev.scores || {};
+      const items = [
+        { label: "1. Làm hồ sơ bệnh án & Chẩn đoán", data: s.recordAndDiagnosis },
+        { label: "2. Chỉ định Cận lâm sàng & BHYT hợp lý", data: s.labsAndBhyt },
+        { label: "3. Y lệnh Điều trị & An toàn thuốc", data: s.treatmentAndSafety },
+        { label: "4. Xử trí diễn tiến lâm sàng", data: s.progressionHandling }
+      ];
+
+      openGenericModal({
+        title: `Bảng điểm Tổng kết Ca bệnh — ${p.name}`,
+        bodyHtml: `
+          <div class="space-y-4">
+            <div class="p-4 rounded-2xl bg-his-50 border border-his-200 flex items-center justify-between gap-4">
+              <div>
+                <p class="text-xs font-semibold text-his-700 uppercase">Xếp loại lâm sàng</p>
+                <p class="text-2xl font-bold text-his-900">${escapeHtml(ev.rating || "Hoàn thành")}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-xs font-semibold text-slate-500">Tổng điểm</p>
+                <p class="text-3xl font-extrabold text-his-700">${ev.totalScore ?? 0}<span class="text-base font-normal text-slate-500">/40</span></p>
+              </div>
+            </div>
+
+            <div class="space-y-2.5">
+              ${items.map(it => `
+                <div class="p-3 rounded-xl border border-slate-200 bg-white">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-xs font-bold text-slate-800">${it.label}</span>
+                    <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-his-100 text-his-800">${it.data?.score ?? 0}/10</span>
+                  </div>
+                  <p class="text-xs text-slate-600 leading-relaxed">${escapeHtml(it.data?.comment || "")}</p>
+                </div>
+              `).join("")}
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 space-y-1.5 text-xs">
+              <p class="font-bold text-emerald-900">Chẩn đoán chuẩn của ca bệnh:</p>
+              <p class="text-emerald-800">${escapeHtml(p.hiddenTruth.actualDiagnosis)}</p>
+              <p class="font-bold text-emerald-900 pt-1">Nguyên tắc điều trị tối ưu:</p>
+              <p class="text-emerald-800">${escapeHtml(p.hiddenTruth.optimalManagement)}</p>
+            </div>
+
+            ${Array.isArray(ev.keyTakeaways) && ev.keyTakeaways.length > 0 ? `
+              <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 space-y-1 text-xs">
+                <p class="font-bold text-amber-900">Điểm rút kinh nghiệm cốt lõi:</p>
+                <ul class="list-disc list-inside space-y-1 text-slate-700">
+                  ${ev.keyTakeaways.map(t => `<li>${escapeHtml(t)}</li>`).join("")}
+                </ul>
+              </div>
+            ` : ""}
+          </div>
+        `
+      });
+    }
+
+    /*************************************************************************
+     * 12. NGĂN KÉO TRỢ GIÚP / HỘI CHẨN BÁC SĨ CỐ VẤN AI
+     *************************************************************************/
+    function openConsultDrawer() {
+      renderConsultDrawer();
+      document.getElementById("consultBackdrop").classList.remove("hidden");
+      document.getElementById("consultDrawer").classList.remove("translate-x-full");
+    }
+
+    function closeConsultDrawer() {
+      document.getElementById("consultBackdrop").classList.add("hidden");
+      document.getElementById("consultDrawer").classList.add("translate-x-full");
+    }
+
+    function renderConsultDrawer() {
+      const p = getCurrentPatient();
+      document.getElementById("consultPatientSubtitle").textContent = `${p.name} (${p.age}T) • Ngày ĐT ${p.currentDay} • ${p.department}`;
+      const container = document.getElementById("consultChatMessages");
+
+      if (!p.consultChat || p.consultChat.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white rounded-2xl border border-slate-200 p-4 text-xs text-slate-600 space-y-2">
+            <p class="font-bold text-his-900">Xin chào đồng nghiệp!</p>
+            <p>Tôi là Bác sĩ Cố vấn đi buồng cùng bạn trên ca bệnh <strong>${escapeHtml(p.name)}</strong>. Khi gặp tình huống khó, bạn có thể bấm 1 trong 3 mức gợi ý phân cấp ở trên hoặc đặt câu hỏi trực tiếp ở khung bên dưới.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = p.consultChat.map(msg => `
+        <div class="flex ${msg.role === "user" ? "justify-end" : "justify-start"}">
+          <div class="max-w-[88%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed shadow-2xs ${
+            msg.role === "user"
+              ? "bg-his-600 text-white rounded-br-sm"
+              : "bg-white border border-slate-200 text-slate-800 rounded-bl-sm"
+          }">
+            ${msg.role === "ai" ? `<div class="text-[10px] font-bold text-his-700 uppercase mb-1">Bác sĩ Cố vấn AI</div>` : ""}
+            <div>${formatMultiline(msg.text)}</div>
+          </div>
+        </div>
+      `).join("");
+      container.scrollTop = container.scrollHeight;
+    }
+
+    async function sendConsultMessage(userText, hintLevel = null) {
+      const p = getCurrentPatient();
+      if (!userText.trim()) return;
+
+      p.consultChat.push({ role: "user", text: userText });
+      saveState();
+      renderConsultDrawer();
+
+      // Hiển thị bong bóng đang suy nghĩ
+      const container = document.getElementById("consultChatMessages");
+      const typingId = "typing-" + Date.now();
+      container.insertAdjacentHTML("beforeend", `
+        <div id="${typingId}" class="flex justify-start">
+          <div class="bg-white border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs text-slate-500 italic">
+            Đang hội chẩn và xem lại hồ sơ...
+          </div>
+        </div>
+      `);
+      container.scrollTop = container.scrollHeight;
+
+      try {
+        const latestVital = p.vitalsHistory[p.vitalsHistory.length - 1];
+        const latestDay = p.treatmentDays[p.treatmentDays.length - 1];
+        const labsText = p.labOrders.map(o =>
+          `Ngày ${o.day}: ` +
+          (o.labResults || []).map(r => `${r.testName}=${r.value}${r.unit}(${r.flag})`).join(", ") + " | " +
+          (o.imagingResults || []).map(i => `${i.serviceName}: ${i.conclusion}`).join("; ")
+        ).join("\n");
+
+        let levelInstruction = "Trả lời ngắn gọn, sắc bén như một bác sĩ đàn anh hướng dẫn đi buồng.";
+        if (hintLevel === "1") {
+          levelInstruction = "ĐÂY LÀ GỢI Ý MỨC 1 (Định hướng & Dấu hiệu báo động): Chỉ gợi mở các cụm triệu chứng/hội chứng quan trọng và dấu hiệu nguy hiểm cần chú ý, KHÔNG nói thẳng tên chẩn đoán xác định cuối cùng hay kê đơn thuốc cụ thể.";
+        } else if (hintLevel === "2") {
+          levelInstruction = "ĐÂY LÀ GỢI Ý MỨC 2 (Cận lâm sàng cốt lõi & BHYT): Gợi ý nhóm xét nghiệm/CĐHA ưu tiên hàng đầu để xác định nguyên nhân và đánh giá độ nặng, lưu ý nguyên tắc tránh lạm dụng/xuất toán BHYT.";
+        } else if (hintLevel === "3") {
+          levelInstruction = "ĐÂY LÀ GỢI Ý MỨC 3 (Hướng xử trí & Phác đồ): Hướng dẫn rõ nguyên tắc điều trị, nhóm thuốc ưu tiên theo phác đồ Bộ Y tế và những chống chỉ định/lưu ý an toàn quan trọng trên bệnh nhân này.";
+        }
+
+        const prompt = `
+NGỮ CẢNH HỒ SƠ ĐANG MỞ:
+- Bệnh nhân: ${p.name}, ${p.age}T, ${p.gender}, Khoa ${p.department}, Đối tượng ${p.insuranceType}, Ngày điều trị ${p.currentDay}.
+- Sinh hiệu hiện tại: M ${latestVital.hr}, HA ${latestVital.bp}, T ${latestVital.temp}°C, NT ${latestVital.rr}, SpO2 ${latestVital.spo2}%, Tri giác: ${latestVital.gcs}.
+- Khám lúc vào viện: ${p.admissionSnapshot.history} | ${p.admissionSnapshot.initialExam}
+- Diễn tiến hiện tại: ${latestDay.progression}
+- Kết quả CLS đã làm: ${labsText || "Chưa làm CLS nào"}
+- Dữ liệu chuẩn (để bạn định hướng chính xác): ${p.hiddenTruth.actualDiagnosis} | Xử trí chuẩn: ${p.hiddenTruth.optimalManagement}
+
+CHỈ DẪN CẤP ĐỘ: ${levelInstruction}
+
+CÂU HỎI CỦA NGƯỜI HỌC: ${userText}`;
+
+        const reply = await callGeminiAPI({
+          systemPrompt: "Bạn là Bác sĩ Cố vấn Lâm sàng giàu kinh nghiệm tại bệnh viện tuyến cuối Việt Nam. Trả lời 100% tiếng Việt y khoa chuẩn xác, súc tích, dễ áp dụng.",
+          userPrompt: prompt,
+          expectJson: false
+        });
+
+        p.consultChat.push({ role: "ai", text: reply });
+        saveState();
+      } catch (err) {
+        p.consultChat.push({ role: "ai", text: "Xin lỗi, hiện không kết nối được với Bác sĩ Cố vấn AI (" + err.message + "). Bạn vui lòng thử lại sau giây lát." });
+      } finally {
+        renderConsultDrawer();
+      }
+    }
+
+    /*************************************************************************
+     * 13. ĐIỀU KHIỂN SIDEBAR MOBILE & SỰ KIỆN GIAO DIỆN
+     *************************************************************************/
+    function openMobileSidebar() {
+      document.getElementById("patientSidebar").classList.remove("-translate-x-full");
+      document.getElementById("sidebarBackdrop").classList.remove("hidden");
+    }
+
+    function closeMobileSidebar() {
+      document.getElementById("patientSidebar").classList.add("-translate-x-full");
+      document.getElementById("sidebarBackdrop").classList.add("hidden");
+    }
+
+    function renderAll() {
+      renderPatientList();
+      renderPatientBanner();
+      renderActiveTab();
+      renderConsultDrawer();
+    }
+
+    function bindGlobalEvents() {
+      // Sidebar mobile
+      document.getElementById("btnToggleSidebar").addEventListener("click", openMobileSidebar);
+      document.getElementById("btnCloseSidebarMobile").addEventListener("click", closeMobileSidebar);
+      document.getElementById("sidebarBackdrop").addEventListener("click", closeMobileSidebar);
+
+      // Tìm kiếm & lọc danh sách bệnh nhân
+      document.getElementById("searchPatientInput").addEventListener("input", renderPatientList);
+      document.getElementById("filterDept").addEventListener("change", renderPatientList);
+      document.getElementById("filterStatus").addEventListener("change", renderPatientList);
+
+      // Chuyển 4 tab chức năng
+      document.querySelectorAll(".emr-tab-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          if (appState.activeTab === "record") readRecordFormIntoPatient();
+          if (appState.activeTab === "treatment") syncDraftOrderFields();
+          appState.activeTab = btn.dataset.tab;
+          saveState();
+          renderActiveTab();
+        });
+      });
+
+      // Ngăn kéo Hội chẩn AI
+      document.getElementById("btnOpenConsult").addEventListener("click", openConsultDrawer);
+      document.getElementById("btnCloseConsult").addEventListener("click", closeConsultDrawer);
+      document.getElementById("consultBackdrop").addEventListener("click", closeConsultDrawer);
+
+      document.querySelectorAll(".btn-tiered-hint").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const level = btn.dataset.hint;
+          const labels = {
+            "1": "Xin gợi ý mức 1: Định hướng lâm sàng và các dấu hiệu báo động cần lưu ý trên ca này.",
+            "2": "Xin gợi ý mức 2: Các cận lâm sàng cốt lõi nên ưu tiên chỉ định và lưu ý BHYT.",
+            "3": "Xin gợi ý mức 3: Nguyên tắc xử trí và phác đồ điều trị chuẩn cho bệnh nhân này."
+          };
+          sendConsultMessage(labels[level], level);
+        });
+      });
+
+      document.getElementById("consultChatForm").addEventListener("submit", e => {
+        e.preventDefault();
+        const inp = document.getElementById("consultChatInput");
+        const val = inp.value.trim();
+        if (!val) return;
+        inp.value = "";
+        sendConsultMessage(val, null);
+      });
+
+      // Modal tạo ca AI mới
+      document.getElementById("btnNewAICase").addEventListener("click", () => {
+        closeMobileSidebar();
+        document.getElementById("modalNewCase").classList.remove("hidden");
+      });
+      document.getElementById("btnCloseNewCaseModal").addEventListener("click", () => {
+        document.getElementById("modalNewCase").classList.add("hidden");
+      });
+      document.getElementById("btnCancelNewCase").addEventListener("click", () => {
+        document.getElementById("modalNewCase").classList.add("hidden");
+      });
+      document.getElementById("btnConfirmCreateCase").addEventListener("click", createNewAICase);
+
+      // Modal chung
+      document.getElementById("btnCloseGenericModal").addEventListener("click", closeGenericModal);
+
+      // Nút đặt lại 3 ca mẫu
+      document.getElementById("btnResetDemo").addEventListener("click", () => {
+        openGenericModal({
+          title: "Khôi phục dữ liệu mẫu ban đầu?",
+          bodyHtml: `<p class="text-sm text-slate-700">Thao tác này sẽ xóa toàn bộ tiến trình đang lưu và khôi phục lại 3 ca bệnh lâm sàng mẫu ban đầu. Bạn có muốn thực hiện không?</p>`,
+          footerHtml: `
+            <button type="button" onclick="closeGenericModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700">Hủy</button>
+            <button type="button" onclick="resetDemoData()" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold">Khôi phục dữ liệu mẫu</button>
+          `
+        });
+      });
+    }
+
+    function resetDemoData() {
+      localStorage.removeItem(STORAGE_KEY);
+      appState.patients = getInitialSamplePatients();
+      appState.selectedPatientId = appState.patients[0].id;
+      appState.activeTab = "record";
+      appState.labCart = [];
+      saveState();
+      closeGenericModal();
+      renderAll();
+      showToast("Đã khôi phục 3 ca bệnh lâm sàng mẫu ban đầu.", "info");
+    }
+
+    // Khởi chạy ứng dụng khi tải xong trang
+    window.addEventListener("DOMContentLoaded", () => {
+      loadState();
+      bindGlobalEvents();
+      renderAll();
+    });
+  </script>
+</body>
+</html>
