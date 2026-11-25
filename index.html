@@ -104,6 +104,16 @@
         Đặt lại mẫu
       </button>
 
+      <!-- Nút Cài đặt kết nối AI (Proxy / API Key) kèm đèn trạng thái -->
+      <button id="btnOpenAISettings" type="button" title="Cấu hình Google Apps Script Proxy hoặc API Key" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-sky-100 hover:bg-his-800 border border-sky-700/70 transition">
+        <span id="aiStatusDot" class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        <span class="hidden sm:inline">Cài đặt AI</span>
+      </button>
+
       <!-- Nút mở ngăn kéo Trợ giúp / Hội chẩn AI luôn hiển thị nổi bật -->
       <button id="btnOpenConsult" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold bg-amber-400 hover:bg-amber-300 text-slate-900 shadow transition">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
@@ -349,6 +359,101 @@
   </div>
 
   <!-- ===================================================================== -->
+  <!-- MODAL CÀI ĐẶT KẾT NỐI AI (PROXY GOOGLE APPS SCRIPT & API KEY CÁ NHÂN) -->
+  <!-- ===================================================================== -->
+  <div id="modalAISettings" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col border border-slate-200 overflow-hidden">
+      <div class="px-5 py-4 bg-his-900 text-white flex items-center justify-between shrink-0">
+        <div>
+          <h3 class="font-bold text-base">Cài đặt kết nối AI</h3>
+          <p class="text-xs text-sky-200">Cấu hình Proxy chia sẻ công khai hoặc API Key cá nhân</p>
+        </div>
+        <button id="btnCloseAISettings" type="button" class="text-sky-200 hover:text-white p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="p-5 overflow-y-auto space-y-4 text-xs sm:text-sm">
+        <!-- Thẻ hiển thị trạng thái kết nối hiện hành -->
+        <div id="aiCurrentModeBanner" class="p-3 rounded-xl border bg-slate-50 border-slate-200 space-y-1">
+          <!-- Render bằng JS -->
+        </div>
+
+        <!-- Chuyển đổi 2 tab cấu hình -->
+        <div class="flex rounded-xl bg-slate-100 p-1 gap-1">
+          <button id="tabBtnAIProxy" type="button" onclick="switchAISettingsTab('proxy')" class="flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition bg-white text-his-800 shadow-xs">
+            Proxy chia sẻ công khai (Khuyên dùng)
+          </button>
+          <button id="tabBtnAIKey" type="button" onclick="switchAISettingsTab('apikey')" class="flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition text-slate-600 hover:text-slate-900">
+            API Key cá nhân (Dùng riêng)
+          </button>
+        </div>
+
+        <!-- Tab 1: Cấu hình Google Apps Script Proxy -->
+        <div id="aiPanelProxy" class="space-y-3">
+          <div id="hardcodedProxyNotice" class="hidden p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs">
+            URL Proxy đã được gắn cố định trong biến <code class="font-mono font-bold">GAS_PROXY_URL</code> của file HTML. Mọi người truy cập web đều tự động sử dụng Proxy này.
+          </div>
+
+          <div>
+            <label for="inputProxyUrl" class="block text-xs font-bold text-slate-700 mb-1">URL Web App Google Apps Script (Lưu tạm trên trình duyệt để kiểm thử)</label>
+            <input id="inputProxyUrl" type="url" placeholder="https://script.google.com/macros/s/AKfycb.../exec" class="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-his-500" />
+            <p class="text-[11px] text-slate-500 mt-1">Sau khi bấm <strong>Kiểm tra kết nối</strong> thành công, hãy copy URL này dán vào dòng <code class="font-mono bg-slate-100 px-1 rounded">const GAS_PROXY_URL = "..."</code> ở đầu file HTML trước khi đẩy lên GitHub Pages.</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" onclick="saveTempProxyUrl()" class="px-3.5 py-2 rounded-xl bg-his-600 hover:bg-his-700 text-white text-xs font-semibold shadow-xs transition">
+              Lưu Proxy tạm
+            </button>
+            <button type="button" onclick="testAIConnection('proxy')" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition">
+              Kiểm tra kết nối
+            </button>
+            <button type="button" onclick="clearTempProxyUrl()" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition">
+              Xóa Proxy tạm
+            </button>
+          </div>
+        </div>
+
+        <!-- Tab 2: Cấu hình API Key cá nhân -->
+        <div id="aiPanelApiKey" class="hidden space-y-3">
+          <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
+            <strong>Lưu ý bảo mật:</strong> Chế độ này chỉ lưu API Key trong bộ nhớ trình duyệt hiện tại (<code class="font-mono">localStorage</code>) để bạn tự luyện tập. Tuyệt đối <strong>không</strong> dán trực tiếp API Key vào file HTML đẩy lên GitHub công khai.
+          </div>
+
+          <div>
+            <label for="inputPersonalApiKey" class="block text-xs font-bold text-slate-700 mb-1">Gemini API Key cá nhân (Google AI Studio)</label>
+            <div class="relative">
+              <input id="inputPersonalApiKey" type="password" placeholder="AIzaSy..." class="w-full pl-3 pr-16 py-2 text-xs font-mono border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-his-500" />
+              <button id="btnToggleApiKeyVis" type="button" onclick="toggleApiKeyVisibility()" class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-[11px] font-semibold text-his-700 hover:bg-his-50 rounded-md">
+                Hiện
+              </button>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" onclick="savePersonalApiKey()" class="px-3.5 py-2 rounded-xl bg-his-600 hover:bg-his-700 text-white text-xs font-semibold shadow-xs transition">
+              Lưu API Key
+            </button>
+            <button type="button" onclick="testAIConnection('apikey')" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition">
+              Kiểm tra kết nối
+            </button>
+            <button type="button" onclick="clearPersonalApiKey()" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition">
+              Xóa API Key
+            </button>
+          </div>
+        </div>
+
+        <!-- Khu vực hiển thị kết quả Kiểm tra kết nối -->
+        <div id="aiTestResultBox" class="hidden p-3 rounded-xl border text-xs leading-relaxed"></div>
+      </div>
+
+      <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-end shrink-0">
+        <button type="button" onclick="closeAISettingsModal()" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-semibold transition">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
   <!-- LỚP PHỦ LOADING TOÀN MÀN HÌNH KHI GỌI AI                              -->
   <!-- ===================================================================== -->
   <div id="loadingOverlay" class="hidden fixed inset-0 z-50 bg-slate-900/45 backdrop-blur-xs flex items-center justify-center p-4">
@@ -369,19 +474,76 @@
   <!-- ===================================================================== -->
   <script>
     /*************************************************************************
-     * 1. CẤU HÌNH API GEMINI & TIỆN ÍCH XỬ LÝ MẠNG / JSON AN TOÀN
+     * CẤU HÌNH KẾT NỐI AI ĐỂ CHIA SẺ CÔNG KHAI (GITHUB PAGES + APPS SCRIPT)
      *************************************************************************/
-    const GEMINI_API_KEY = ""; // Môi trường Canvas tự động cung cấp khóa API
+    const GAS_PROXY_URL = ""; // Dán URL Web App của Google Apps Script vào đây khi deploy GitHub Pages
+
+    /*************************************************************************
+     * 1. CẤU HÌNH API GEMINI 3 TẦNG & TIỆN ÍCH XỬ LÝ MẠNG / JSON AN TOÀN
+     *************************************************************************/
+    const GEMINI_API_KEY = ""; // Môi trường Preview tự động cung cấp khóa API
     const GEMINI_MODEL = "gemini-3-flash-preview";
     const STORAGE_KEY = "vn_emr_simulator_state_v1";
+    const PROXY_URL_STORAGE_KEY = "vn_emr_proxy_url";
+    const API_KEY_STORAGE_KEY = "vn_emr_api_key";
 
     /**
-     * Gọi Gemini API kèm cơ chế tự động thử lại (exponential backoff) khi nghẽn mạng.
-     * @param {Object} options - systemPrompt, userPrompt, expectJson, temperature
+     * Xác định trạng thái kết nối AI hiện tại theo thứ tự ưu tiên 3 tầng.
+     */
+    function getAIConnectionState() {
+      const hardcodedProxy = (GAS_PROXY_URL || "").trim();
+      const tempProxy = (localStorage.getItem(PROXY_URL_STORAGE_KEY) || "").trim();
+      const personalKey = (localStorage.getItem(API_KEY_STORAGE_KEY) || "").trim();
+
+      if (/^https?:\/\//i.test(hardcodedProxy)) {
+        return {
+          mode: "hardcoded_proxy",
+          activeProxyUrl: hardcodedProxy,
+          personalKey,
+          isConfigured: true,
+          title: "Đang dùng Proxy cố định trong code",
+          desc: "Sẵn sàng chia sẻ công khai trên GitHub Pages mà không lộ API Key."
+        };
+      }
+      if (/^https?:\/\//i.test(tempProxy)) {
+        return {
+          mode: "temp_proxy",
+          activeProxyUrl: tempProxy,
+          personalKey,
+          isConfigured: true,
+          title: "Đang dùng Proxy tạm trong trình duyệt",
+          desc: "Phù hợp để kiểm thử ngay. Hãy dán URL này vào biến GAS_PROXY_URL trong file HTML trước khi chia sẻ cho người khác."
+        };
+      }
+      if (personalKey) {
+        return {
+          mode: "personal_key",
+          activeProxyUrl: "",
+          personalKey,
+          isConfigured: true,
+          title: "Đang dùng API Key cá nhân (trình duyệt hiện tại)",
+          desc: "Chỉ lưu cục bộ trong localStorage trên máy này. Người khác mở web sẽ không có key."
+        };
+      }
+      return {
+        mode: "preview",
+        activeProxyUrl: "",
+        personalKey: "",
+        isConfigured: false,
+        title: "Chế độ Preview mặc định",
+        desc: "Chạy tự động trong khung Preview. Khi deploy lên GitHub Pages, cần dán GAS_PROXY_URL hoặc cấu hình tại đây."
+      };
+    }
+
+    /**
+     * Gọi AI tập trung theo cơ chế ưu tiên 3 tầng kèm exponential backoff:
+     * - Tầng 1: Google Apps Script Proxy (GAS_PROXY_URL hoặc vn_emr_proxy_url) - tránh CORS preflight bằng text/plain
+     * - Tầng 2: API Key cá nhân (vn_emr_api_key trong localStorage)
+     * - Tầng 3: Môi trường Preview mặc định
+     * @param {Object} options - systemPrompt, userPrompt, expectJson, temperature, overrideConfig
      * @returns {Promise<string|Object>}
      */
-    async function callGeminiAPI({ systemPrompt, userPrompt, expectJson = false, temperature = 0.4 }) {
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+    async function callGeminiAPI({ systemPrompt, userPrompt, expectJson = false, temperature = 0.4, overrideConfig = null }) {
       const payload = {
         contents: [{ role: "user", parts: [{ text: userPrompt }] }],
         systemInstruction: { parts: [{ text: systemPrompt }] },
@@ -391,26 +553,102 @@
         }
       };
 
+      const activeProxyUrl = overrideConfig && overrideConfig.proxyUrl !== undefined
+        ? overrideConfig.proxyUrl.trim()
+        : (GAS_PROXY_URL || localStorage.getItem(PROXY_URL_STORAGE_KEY) || "").trim();
+
+      const localApiKey = overrideConfig && overrideConfig.apiKey !== undefined
+        ? overrideConfig.apiKey.trim()
+        : (localStorage.getItem(API_KEY_STORAGE_KEY) || "").trim();
+
+      const useProxy = /^https?:\/\//i.test(activeProxyUrl);
+      const usePersonalKey = !useProxy && Boolean(localApiKey);
+
       const delays = [1000, 2000, 4000];
       let lastError = null;
 
       for (let attempt = 0; attempt <= delays.length; attempt++) {
         try {
-          const response = await fetch(apiUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          });
+          let response;
 
-          if (!response.ok) {
-            const errText = await response.text().catch(() => "");
-            throw new Error(`HTTP ${response.status}: ${errText.slice(0, 160)}`);
+          if (useProxy) {
+            // Tầng 1: Gọi Google Apps Script Proxy với text/plain + redirect follow để tránh lỗi CORS preflight
+            response = await fetch(activeProxyUrl, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain;charset=utf-8" },
+              redirect: "follow",
+              body: JSON.stringify(payload)
+            });
+          } else {
+            // Tầng 2 (API Key cá nhân) hoặc Tầng 3 (Môi trường Preview mặc định)
+            const keyToUse = usePersonalKey ? localApiKey : GEMINI_API_KEY;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(keyToUse)}`;
+            response = await fetch(apiUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
           }
 
-          const data = await response.json();
+          const rawBody = await response.text().catch(() => "");
+
+          // Xử lý lỗi HTTP rõ ràng theo từng tầng
+          if (!response.ok) {
+            const isAuthError = response.status === 401 || response.status === 403 || rawBody.includes("PERMISSION_DENIED");
+
+            if (!useProxy && !usePersonalKey && isAuthError) {
+              const friendlyErr = new Error(
+                "Chưa cấu hình kết nối AI cho môi trường công khai (HTTP 403 / PERMISSION_DENIED). Hãy dán URL Google Apps Script vào biến GAS_PROXY_URL ở đầu file HTML hoặc bấm nút \"Cài đặt AI\" trên thanh tiêu đề."
+              );
+              friendlyErr.noRetry = true;
+              throw friendlyErr;
+            }
+
+            if (usePersonalKey && (isAuthError || response.status === 400)) {
+              const keyErr = new Error(
+                `API Key cá nhân không hợp lệ hoặc bị từ chối quyền (HTTP ${response.status}). Vui lòng kiểm tra lại khóa trong mục "Cài đặt AI".`
+              );
+              keyErr.noRetry = true;
+              throw keyErr;
+            }
+
+            const err = new Error(`HTTP ${response.status}: ${rawBody.slice(0, 180)}`);
+            if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+              err.noRetry = true;
+            }
+            throw err;
+          }
+
+          // Phân tích JSON trả về từ Proxy hoặc Gemini API
+          let data;
+          try {
+            data = JSON.parse(rawBody);
+          } catch (parseErr) {
+            if (useProxy && /<html|<!doctype/i.test(rawBody)) {
+              const htmlErr = new Error(
+                "Proxy Google Apps Script trả về trang HTML thay vì JSON. Hãy kiểm tra khi Deploy Web App đã chọn quyền truy cập là \"Bất kỳ ai (Anyone)\" và copy đúng URL kết thúc bằng /exec."
+              );
+              htmlErr.noRetry = true;
+              throw htmlErr;
+            }
+            throw new Error("Phản hồi từ máy chủ AI không đúng định dạng JSON.");
+          }
+
+          // Nếu Proxy hoặc Gemini trả về đối tượng lỗi chuẩn
+          if (data && data.error) {
+            const msg = typeof data.error === "string"
+              ? data.error
+              : (data.error.message || JSON.stringify(data.error));
+            const apiErr = new Error(`Lỗi từ dịch vụ AI: ${msg}`);
+            if (data.error.code === 400 || data.error.code === 401 || data.error.code === 403) {
+              apiErr.noRetry = true;
+            }
+            throw apiErr;
+          }
+
           const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
           if (!rawText) {
-            throw new Error("AI không trả về nội dung hợp lệ.");
+            throw new Error("AI không trả về nội dung hợp lệ (candidates rỗng).");
           }
 
           if (expectJson) {
@@ -419,6 +657,9 @@
           return rawText;
         } catch (err) {
           lastError = err;
+          if (err && err.noRetry) {
+            break;
+          }
           if (attempt < delays.length) {
             await new Promise(resolve => setTimeout(resolve, delays[attempt]));
           }
@@ -2850,6 +3091,10 @@ CÂU HỎI CỦA NGƯỜI HỌC: ${userText}`;
       // Modal chung
       document.getElementById("btnCloseGenericModal").addEventListener("click", closeGenericModal);
 
+      // Modal Cài đặt AI
+      document.getElementById("btnOpenAISettings").addEventListener("click", openAISettingsModal);
+      document.getElementById("btnCloseAISettings").addEventListener("click", closeAISettingsModal);
+
       // Nút đặt lại 3 ca mẫu
       document.getElementById("btnResetDemo").addEventListener("click", () => {
         openGenericModal({
@@ -2875,10 +3120,174 @@ CÂU HỎI CỦA NGƯỜI HỌC: ${userText}`;
       showToast("Đã khôi phục 3 ca bệnh lâm sàng mẫu ban đầu.", "info");
     }
 
+    /*************************************************************************
+     * 14. QUẢN LÝ MODAL CÀI ĐẶT AI & KIỂM TRA KẾT NỐI
+     *************************************************************************/
+    function updateAIConnectionIndicator() {
+      const state = getAIConnectionState();
+      const dot = document.getElementById("aiStatusDot");
+      if (dot) {
+        dot.className = `w-2 h-2 rounded-full shrink-0 ${state.isConfigured ? "bg-emerald-400" : "bg-amber-400"}`;
+      }
+      const banner = document.getElementById("aiCurrentModeBanner");
+      if (banner) {
+        const styleClass = state.isConfigured
+          ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+          : "bg-amber-50 border-amber-200 text-amber-900";
+        banner.className = `p-3 rounded-xl border space-y-1 ${styleClass}`;
+        banner.innerHTML = `
+          <div class="flex items-center gap-2 font-bold text-xs">
+            <span class="w-2.5 h-2.5 rounded-full ${state.isConfigured ? "bg-emerald-500" : "bg-amber-500"}"></span>
+            <span>${escapeHtml(state.title)}</span>
+          </div>
+          <p class="text-[11px] opacity-90">${escapeHtml(state.desc)}</p>
+        `;
+      }
+      const hardcodedNotice = document.getElementById("hardcodedProxyNotice");
+      if (hardcodedNotice) {
+        if (/^https?:\/\//i.test((GAS_PROXY_URL || "").trim())) {
+          hardcodedNotice.classList.remove("hidden");
+        } else {
+          hardcodedNotice.classList.add("hidden");
+        }
+      }
+    }
+
+    function openAISettingsModal() {
+      document.getElementById("inputProxyUrl").value = localStorage.getItem(PROXY_URL_STORAGE_KEY) || "";
+      document.getElementById("inputPersonalApiKey").value = localStorage.getItem(API_KEY_STORAGE_KEY) || "";
+      document.getElementById("aiTestResultBox").classList.add("hidden");
+      updateAIConnectionIndicator();
+      const state = getAIConnectionState();
+      switchAISettingsTab(state.mode === "personal_key" ? "apikey" : "proxy");
+      document.getElementById("modalAISettings").classList.remove("hidden");
+    }
+
+    function closeAISettingsModal() {
+      document.getElementById("modalAISettings").classList.add("hidden");
+    }
+
+    function switchAISettingsTab(tab) {
+      const btnProxy = document.getElementById("tabBtnAIProxy");
+      const btnKey = document.getElementById("tabBtnAIKey");
+      const panelProxy = document.getElementById("aiPanelProxy");
+      const panelKey = document.getElementById("aiPanelApiKey");
+
+      if (tab === "proxy") {
+        panelProxy.classList.remove("hidden");
+        panelKey.classList.add("hidden");
+        btnProxy.className = "flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition bg-white text-his-800 shadow-xs";
+        btnKey.className = "flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition text-slate-600 hover:text-slate-900";
+      } else {
+        panelProxy.classList.add("hidden");
+        panelKey.classList.remove("hidden");
+        btnKey.className = "flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition bg-white text-his-800 shadow-xs";
+        btnProxy.className = "flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition text-slate-600 hover:text-slate-900";
+      }
+    }
+
+    function toggleApiKeyVisibility() {
+      const inp = document.getElementById("inputPersonalApiKey");
+      const btn = document.getElementById("btnToggleApiKeyVis");
+      if (inp.type === "password") {
+        inp.type = "text";
+        btn.textContent = "Ẩn";
+      } else {
+        inp.type = "password";
+        btn.textContent = "Hiện";
+      }
+    }
+
+    function saveTempProxyUrl() {
+      const val = document.getElementById("inputProxyUrl").value.trim();
+      if (!val || !/^https?:\/\//i.test(val)) {
+        showToast("URL Proxy phải bắt đầu bằng https:// (URL Web App của Google Apps Script).", "warn");
+        return;
+      }
+      localStorage.setItem(PROXY_URL_STORAGE_KEY, val);
+      updateAIConnectionIndicator();
+      showToast("Đã lưu URL Proxy tạm trên trình duyệt.", "success");
+    }
+
+    function clearTempProxyUrl() {
+      localStorage.removeItem(PROXY_URL_STORAGE_KEY);
+      document.getElementById("inputProxyUrl").value = "";
+      updateAIConnectionIndicator();
+      showToast("Đã xóa URL Proxy tạm.", "info");
+    }
+
+    function savePersonalApiKey() {
+      const val = document.getElementById("inputPersonalApiKey").value.trim();
+      if (!val) {
+        showToast("Vui lòng nhập Gemini API Key trước khi lưu.", "warn");
+        return;
+      }
+      localStorage.setItem(API_KEY_STORAGE_KEY, val);
+      updateAIConnectionIndicator();
+      showToast("Đã lưu API Key cá nhân vào trình duyệt.", "success");
+    }
+
+    function clearPersonalApiKey() {
+      localStorage.removeItem(API_KEY_STORAGE_KEY);
+      document.getElementById("inputPersonalApiKey").value = "";
+      updateAIConnectionIndicator();
+      showToast("Đã xóa API Key cá nhân khỏi trình duyệt.", "info");
+    }
+
+    async function testAIConnection(targetMode) {
+      const box = document.getElementById("aiTestResultBox");
+      box.className = "p-3 rounded-xl border bg-sky-50 border-sky-200 text-sky-900 text-xs";
+      box.innerHTML = "Đang gửi tín hiệu kiểm tra kết nối tới máy chủ AI...";
+      box.classList.remove("hidden");
+
+      let overrideConfig = null;
+      if (targetMode === "proxy") {
+        const enteredUrl = document.getElementById("inputProxyUrl").value.trim() || (GAS_PROXY_URL || "").trim();
+        if (!/^https?:\/\//i.test(enteredUrl)) {
+          box.className = "p-3 rounded-xl border bg-rose-50 border-rose-200 text-rose-800 text-xs";
+          box.innerHTML = "<strong>Chưa có URL Proxy hợp lệ:</strong> Vui lòng nhập URL Web App Google Apps Script (bắt đầu bằng <code>https://script.google.com/.../exec</code>) để kiểm tra.";
+          return;
+        }
+        overrideConfig = { proxyUrl: enteredUrl, apiKey: "" };
+      } else if (targetMode === "apikey") {
+        const enteredKey = document.getElementById("inputPersonalApiKey").value.trim();
+        if (!enteredKey) {
+          box.className = "p-3 rounded-xl border bg-rose-50 border-rose-200 text-rose-800 text-xs";
+          box.innerHTML = "<strong>Chưa nhập API Key:</strong> Vui lòng dán Gemini API Key của bạn vào ô trên để kiểm tra.";
+          return;
+        }
+        overrideConfig = { proxyUrl: "", apiKey: enteredKey };
+      }
+
+      const t0 = performance.now();
+      try {
+        const reply = await callGeminiAPI({
+          systemPrompt: "Bạn là trợ lý y khoa VN-EMR. Hãy trả lời cực ngắn gọn trong 1 câu tiếng Việt.",
+          userPrompt: "Xin chào, hãy xác nhận hệ thống AI của VN-EMR đang hoạt động bình thường.",
+          expectJson: false,
+          temperature: 0.2,
+          overrideConfig
+        });
+        const elapsed = Math.round(performance.now() - t0);
+        box.className = "p-3 rounded-xl border bg-emerald-50 border-emerald-200 text-emerald-900 text-xs space-y-1";
+        box.innerHTML = `
+          <div class="font-bold">✓ Kết nối thành công (${elapsed} ms)!</div>
+          <div><strong>Phản hồi AI:</strong> ${escapeHtml(reply.trim())}</div>
+        `;
+      } catch (err) {
+        box.className = "p-3 rounded-xl border bg-rose-50 border-rose-200 text-rose-800 text-xs space-y-1";
+        box.innerHTML = `
+          <div class="font-bold">✕ Kết nối thất bại</div>
+          <div>${escapeHtml(err.message)}</div>
+        `;
+      }
+    }
+
     // Khởi chạy ứng dụng khi tải xong trang
     window.addEventListener("DOMContentLoaded", () => {
       loadState();
       bindGlobalEvents();
+      updateAIConnectionIndicator();
       renderAll();
     });
   </script>
