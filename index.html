@@ -62,9 +62,14 @@
     <!-- CỘT TRÁI: DANH SÁCH BỆNH NHÂN TẠI KHOA -->
     <aside class="w-72 md:w-80 bg-white border-r border-slate-200 flex flex-col shrink-0">
       <div class="p-3 border-b border-slate-200 space-y-2">
-        <button onclick="openNewCaseModal()" class="w-full py-2 px-3 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold shadow-sm transition">
-          + Tiếp nhận ca mới (AI tạo ca)
-        </button>
+        <div class="grid grid-cols-2 gap-1.5">
+          <button onclick="openNewCaseModal('ai')" class="py-2 px-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shadow-sm transition">
+            + AI tạo ca mới
+          </button>
+          <button onclick="openNewCaseModal('manual')" class="py-2 px-2 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold shadow-sm transition">
+            + Tự soạn ca
+          </button>
+        </div>
         <input id="searchInput" oninput="renderPatientList()" type="text" placeholder="Tìm tên BN, mã HSBA, chẩn đoán..."
           class="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" />
         <div class="flex gap-1.5">
@@ -82,6 +87,8 @@
             <option value="Tiêu hóa - Gan mật">Tiêu hóa - Gan mật</option>
             <option value="Nội tiết">Nội tiết</option>
             <option value="Cấp cứu">Cấp cứu</option>
+            <option value="Sản phụ khoa">Sản phụ khoa</option>
+            <option value="Nhi khoa">Nhi khoa</option>
           </select>
         </div>
       </div>
@@ -166,24 +173,39 @@
           Đăng nhập
         </button>
         <p class="text-[11px] text-slate-500 text-center">
-          Chưa cần tài khoản? Bạn vẫn có thể đóng hộp thoại này để xem 3 ca mẫu có sẵn.
+          Chưa cần tài khoản? Bạn vẫn có thể đóng hộp thoại này để xem 3 ca mẫu hoặc tự soạn ca tạm.
         </p>
       </form>
     </div>
   </div>
 
-  <!-- MODAL TẠO CA LÂM SÀNG MỚI BẰNG AI -->
-  <div id="newCaseModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
-      <div class="bg-sky-700 text-white px-5 py-3.5 flex items-center justify-between">
-        <h3 class="font-bold text-base">Tiếp nhận ca lâm sàng mới (AI tạo ca thực tế)</h3>
-        <button onclick="closeNewCaseModal()" class="text-sky-200 hover:text-white">✕</button>
+  <!-- MODAL TIẾP NHẬN / TẠO CA LÂM SÀNG (2 CHẾ ĐỘ: AI TỰ ĐỘNG & TỰ SOẠN CÓ GỢI Ý) -->
+  <div id="newCaseModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 p-3 md:p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden">
+      <div class="bg-sky-800 text-white px-5 py-3.5 flex items-center justify-between shrink-0">
+        <div>
+          <h3 class="font-bold text-base">Tiếp nhận & Thiết kế Ca lâm sàng mới</h3>
+          <p class="text-[11px] text-sky-200">Chọn AI tạo tự động hoặc tự nhập toàn bộ dữ liệu bệnh án theo ý bạn</p>
+        </div>
+        <button onclick="closeNewCaseModal()" class="text-sky-200 hover:text-white text-lg">✕</button>
       </div>
-      <form onsubmit="generateAICase(event)" class="p-5 space-y-4">
-        <div class="grid grid-cols-2 gap-3">
+
+      <!-- TAB CHUYỂN CHẾ ĐỘ -->
+      <div class="flex border-b border-slate-200 text-xs md:text-sm font-medium bg-slate-50 shrink-0">
+        <button id="newCaseTabAI" onclick="switchNewCaseTab('ai')" class="flex-1 py-2.5 tab-active">
+          1. AI tạo ca tự động
+        </button>
+        <button id="newCaseTabManual" onclick="switchNewCaseTab('manual')" class="flex-1 py-2.5 text-slate-500 hover:text-sky-600">
+          2. Tự soạn ca lâm sàng (Có gợi ý mẫu & AI điền tiếp)
+        </button>
+      </div>
+
+      <!-- FORM CHẾ ĐỘ 1: AI TẠO CA TỰ ĐỘNG -->
+      <form id="formAICase" onsubmit="generateAICase(event)" class="p-5 space-y-4 overflow-y-auto scrollbar-thin">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-semibold text-slate-700 mb-1">Chuyên khoa</label>
-            <select id="newCaseDept" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg">
+            <select id="newCaseDept" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg bg-white">
               <option>Nội tổng quát</option>
               <option>Ngoại tổng quát</option>
               <option>Tim mạch</option>
@@ -197,7 +219,7 @@
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-700 mb-1">Độ khó lâm sàng</label>
-            <select id="newCaseDiff" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg">
+            <select id="newCaseDiff" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg bg-white">
               <option value="Trình độ Y5-Y6 (ca kinh điển, bệnh cảnh rõ)">Y5–Y6 (Ca kinh điển)</option>
               <option value="Trình độ Bác sĩ đa khoa / Nội trú (có bệnh nền phối hợp)">Bác sĩ đa khoa / Nội trú</option>
               <option value="Ca phức tạp hội chẩn (biến chứng hoặc triệu chứng không điển hình)">Ca khó / Hội chẩn</option>
@@ -209,11 +231,212 @@
           <textarea id="newCaseTopic" rows="3" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg"
             placeholder="Ví dụ: Bệnh nhân nam lớn tuổi đau bụng hạ sườn phải kèm sốt vàng da, hoặc để trống để AI tự chọn ca ngẫu nhiên..."></textarea>
         </div>
-        <div class="flex justify-end gap-2 pt-2">
-          <button type="button" onclick="closeNewCaseModal()" class="px-4 py-2 text-sm rounded-lg border border-slate-300 hover:bg-slate-50">Hủy</button>
-          <button id="btnCreateCase" type="submit" class="px-4 py-2 text-sm rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-semibold">
-            Tạo hồ sơ nhập viện
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="closeNewCaseModal()" class="px-4 py-2 text-xs rounded-lg border border-slate-300 hover:bg-slate-50">Hủy</button>
+          <button id="btnCreateCase" type="submit" class="px-4 py-2 text-xs rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-semibold">
+            Tạo hồ sơ nhập viện bằng AI
           </button>
+        </div>
+      </form>
+
+      <!-- FORM CHẾ ĐỘ 2: TỰ SOẠN CA LÂM SÀNG (TỰ NHẬP + GỢI Ý MẪU + AI ĐIỀN TIẾP) -->
+      <form id="formManualCase" onsubmit="saveManualCase(event)" class="hidden flex-1 flex flex-col overflow-hidden">
+        <!-- THANH GỢI Ý NHANH -->
+        <div class="px-5 py-3 bg-indigo-50/80 border-b border-indigo-100 flex flex-wrap items-center gap-2 shrink-0">
+          <select id="manualPresetSelect" onchange="applyManualPreset()" class="flex-1 min-w-[200px] text-xs px-2.5 py-2 border border-indigo-200 rounded-lg bg-white font-medium text-indigo-950">
+            <option value="">-- Chọn khung mẫu gợi ý sẵn (miễn phí, tùy chỉnh tự do) --</option>
+            <option value="appendicitis">Mẫu 1: Viêm ruột thừa cấp (Ngoại tổng quát)</option>
+            <option value="ugib">Mẫu 2: Xuất huyết tiêu hóa trên do loét dạ dày (Tiêu hóa)</option>
+            <option value="stemi">Mẫu 3: Nhồi máu cơ tim cấp ST chênh lên (Tim mạch)</option>
+            <option value="dka">Mẫu 4: Nhiễm toan ceton do đái tháo đường (Nội tiết / Cấp cứu)</option>
+            <option value="urosepsis">Mẫu 5: Sốc nhiễm khuẩn đường tiết niệu (Cấp cứu)</option>
+          </select>
+
+          <button id="btnManualAISuggest" type="button" onclick="aiSuggestManualFields()"
+            class="px-3 py-2 text-xs rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-sm whitespace-nowrap"
+            title="Giữ nguyên các ô bạn đã nhập và nhờ AI gợi ý điền tiếp các ô còn trống">
+            ✨ AI gợi ý điền ô còn trống
+          </button>
+
+          <button type="button" onclick="clearManualForm()"
+            class="px-2.5 py-2 text-xs rounded-lg bg-white hover:bg-slate-100 border border-slate-300 text-slate-700">
+            Xóa trắng
+          </button>
+        </div>
+
+        <!-- NỘI DUNG BIỂU MẪU CUỘN -->
+        <div class="p-5 space-y-4 overflow-y-auto scrollbar-thin text-xs flex-1">
+          <!-- NHÓM A: HÀNH CHÍNH & BHYT -->
+          <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 space-y-2.5">
+            <div class="font-bold text-slate-800 uppercase text-[11px] tracking-wide">A. Thông tin hành chính & BHYT</div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+              <div class="col-span-2">
+                <label class="block font-semibold text-slate-600 mb-1">Họ tên bệnh nhân <span class="text-red-500">*</span></label>
+                <input id="mName" type="text" required placeholder="VD: Phạm Văn Nam" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white" />
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-600 mb-1">Tuổi <span class="text-red-500">*</span></label>
+                <input id="mAge" type="number" min="0" max="120" required placeholder="VD: 45" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white" />
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-600 mb-1">Giới tính</label>
+                <select id="mGender" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white">
+                  <option value="Nam">Nam</option>
+                  <option value="Nữ">Nữ</option>
+                </select>
+              </div>
+              <div class="col-span-2 md:col-span-1">
+                <label class="block font-semibold text-slate-600 mb-1">Chuyên khoa</label>
+                <select id="mDept" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white">
+                  <option>Nội tổng quát</option>
+                  <option>Ngoại tổng quát</option>
+                  <option>Tim mạch</option>
+                  <option>Hô hấp</option>
+                  <option>Tiêu hóa - Gan mật</option>
+                  <option>Nội tiết</option>
+                  <option>Cấp cứu</option>
+                  <option>Sản phụ khoa</option>
+                  <option>Nhi khoa</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-600 mb-1">Phòng / Giường</label>
+                <input id="mBed" type="text" placeholder="VD: Phòng 201 - G03" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white" />
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-600 mb-1">Đối tượng</label>
+                <select id="mInsType" onchange="toggleManualBhytRate()" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white">
+                  <option value="BHYT">BHYT</option>
+                  <option value="Thu phí">Thu phí</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-600 mb-1">Mức hưởng BHYT (%)</label>
+                <select id="mBhytRate" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white">
+                  <option value="80">80%</option>
+                  <option value="95">95%</option>
+                  <option value="100">100%</option>
+                  <option value="0">0%</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- NHÓM B: SINH HIỆU NGÀY 1 -->
+          <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 space-y-2">
+            <div class="flex items-center justify-between flex-wrap gap-1">
+              <span class="font-bold text-slate-800 uppercase text-[11px] tracking-wide">B. Sinh hiệu lúc nhập viện (Ngày 1)</span>
+              <span class="text-[10px] text-slate-500">Gợi ý bình thường: Mạch 60–100 • Nhiệt 36,5–37,5 • HA 120/80 • NT 14–20 • SpO2 ≥ 96%</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              <div>
+                <label class="block text-[11px] font-medium text-slate-600 mb-0.5">Mạch (l/phút)</label>
+                <input id="mPulse" type="number" placeholder="VD: 105" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white" />
+              </div>
+              <div>
+                <label class="block text-[11px] font-medium text-slate-600 mb-0.5">Nhiệt độ (°C)</label>
+                <input id="mTemp" type="number" step="0.1" placeholder="VD: 38.5" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white" />
+              </div>
+              <div>
+                <label class="block text-[11px] font-medium text-slate-600 mb-0.5">Huyết áp (mmHg)</label>
+                <input id="mBp" type="text" placeholder="VD: 110/70" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white" />
+              </div>
+              <div>
+                <label class="block text-[11px] font-medium text-slate-600 mb-0.5">Nhịp thở (l/phút)</label>
+                <input id="mRr" type="number" placeholder="VD: 22" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white" />
+              </div>
+              <div>
+                <label class="block text-[11px] font-medium text-slate-600 mb-0.5">SpO2 (%)</label>
+                <input id="mSpo2" type="number" min="40" max="100" placeholder="VD: 96" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white" />
+              </div>
+            </div>
+          </div>
+
+          <!-- NHÓM C: BỆNH ÁN CHI TIẾT -->
+          <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 space-y-2.5">
+            <div class="font-bold text-slate-800 uppercase text-[11px] tracking-wide">C. Nội dung hồ sơ bệnh án</div>
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Lý do vào viện <span class="text-red-500">*</span></label>
+              <input id="mChief" type="text" required placeholder="VD: Đau bụng vùng hố chậu phải giờ thứ 12 kèm sốt nhẹ" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white" />
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+              <div>
+                <label class="block font-semibold text-slate-600 mb-1">Quá trình bệnh lý (Bệnh sử)</label>
+                <textarea id="mHpi" rows="3" placeholder="Gợi ý: Khởi phát, tính chất đau/sốt, triệu chứng kèm theo, đã xử trí gì trước nhập viện..."
+                  class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white"></textarea>
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-600 mb-1">Tiền sử bản thân, gia đình & dị ứng</label>
+                <textarea id="mPmh" rows="3" placeholder="Gợi ý: Bệnh nội/ngoại khoa trước đây, thuốc đang dùng, tiền sử dị ứng, thói quen..."
+                  class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white"></textarea>
+              </div>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Khám lâm sàng hiện tại</label>
+              <textarea id="mExam" rows="3" placeholder="Gợi ý: Tổng trạng, da niêm, khám cơ quan bệnh lý (dấu hiệu dương tính & âm tính có giá trị), tim phổi..."
+                class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white"></textarea>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Tóm tắt bệnh án</label>
+              <textarea id="mSummary" rows="2" placeholder="Gợi ý: Bệnh nhân nam/nữ ... tuổi, tiền sử ..., nhập viện vì ..., qua hỏi bệnh và thăm khám ghi nhận hội chứng..."
+                class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white"></textarea>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+              <div class="md:col-span-2">
+                <label class="block font-semibold text-slate-600 mb-1">Chẩn đoán sơ bộ</label>
+                <input id="mPrelim" type="text" placeholder="VD: Theo dõi viêm ruột thừa cấp chưa biến chứng" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white" />
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-600 mb-1">Mã ICD-10</label>
+                <input id="mIcd" type="text" placeholder="VD: K35.8" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white font-mono" />
+              </div>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Chẩn đoán phân biệt</label>
+              <input id="mDiff" type="text" placeholder="VD: Viêm túi thừa đại tràng phải, cơn đau quặn thận phải, thai ngoài tử cung vỡ..." class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white" />
+            </div>
+          </div>
+
+          <!-- NHÓM D: DIỄN BIẾN NGÀY 1 & CHĂM SÓC -->
+          <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 space-y-2.5">
+            <div class="font-bold text-slate-800 uppercase text-[11px] tracking-wide">D. Diễn biến & Chế độ Ngày 1</div>
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Ghi nhận diễn biến Ngày 1</label>
+              <textarea id="mProgress" rows="2" placeholder="Gợi ý: Tình trạng hiện tại khi mới nhận bệnh lên khoa (để trống hệ thống tự lấy theo lý do vào viện & khám)..."
+                class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white"></textarea>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+              <div>
+                <label class="block font-semibold text-slate-600 mb-1">Chế độ chăm sóc</label>
+                <input id="mCare" type="text" placeholder="VD: Chăm sóc cấp II — Theo dõi sinh hiệu mỗi 4 giờ" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white" />
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-600 mb-1">Chế độ dinh dưỡng</label>
+                <input id="mDiet" type="text" placeholder="VD: Nhịn ăn tạm thời / Cháo loãng / Ăn nhạt" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white" />
+              </div>
+            </div>
+          </div>
+
+          <!-- NHÓM E: KỊCH BẢN ĐÁP ÁN NỀN CHO AI -->
+          <div class="p-3.5 rounded-xl border border-amber-200 bg-amber-50/70 space-y-1.5">
+            <div class="font-bold text-amber-900 uppercase text-[11px] tracking-wide">E. Đáp án nền & Hướng xử trí chuẩn (AI dùng làm chuẩn mô phỏng)</div>
+            <p class="text-[11px] text-amber-800">
+              Nhập chẩn đoán xác định thực sự, kết quả CLS điển hình kỳ vọng và phác đồ chuẩn để AI trả kết quả xét nghiệm, mô phỏng diễn tiến 24h và chấm điểm sát ý đồ của bạn (có thể để trống nếu muốn tự suy luận mở).
+            </p>
+            <textarea id="mGroundTruth" rows="3" placeholder="VD: Viêm ruột thừa cấp giờ thứ 12 chưa vỡ mủ. Bạch cầu tăng 15 G/L (Neu 84%), siêu âm ruột thừa đường kính 9 mm ấn không xẹp. Xử trí: nhịn ăn, bù dịch, kháng sinh dự phòng, chỉ định phẫu thuật nội soi cắt ruột thừa sớm."
+              class="w-full px-2.5 py-1.5 border border-amber-300 rounded-lg bg-white"></textarea>
+          </div>
+        </div>
+
+        <!-- CHÂN FORM TỰ SOẠN -->
+        <div class="px-5 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between gap-2 shrink-0">
+          <span class="text-[11px] text-slate-500">Mẹo: Nhập vài ý chính rồi bấm <b>✨ AI gợi ý điền ô còn trống</b> để tiết kiệm thời gian.</span>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeNewCaseModal()" class="px-4 py-2 text-xs rounded-lg border border-slate-300 bg-white hover:bg-slate-100">Hủy</button>
+            <button type="submit" class="px-4 py-2 text-xs rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow">
+              Lưu & Mở hồ sơ ca bệnh
+            </button>
+          </div>
         </div>
       </form>
     </div>
@@ -337,7 +560,96 @@
  * CẤU HÌNH DUY NHẤT CẦN THAY ĐỔI TRƯỚC KHI ĐẨY LÊN GITHUB PAGES
  * Dán URL ứng dụng web Google Apps Script (kết thúc bằng /exec) vào đây:
  * ========================================================================= */
-const GAS_PROXY_URL = "https://script.google.com/macros/s/AKfycby5HWHUF5J0MlhkDlD9UCBsYtbBNHwM71ENE-r0USE2cCOVmkBS_1xk1bui0L3uWhoh0Q/exec";
+const GAS_PROXY_URL = "DAN_URL_WEB_APP_CUA_BAN_VAO_DAY";
+
+/* ==================== 5 KHUNG MẪU GỢI Ý CHO TÍNH NĂNG TỰ SOẠN CA ==================== */
+const MANUAL_CASE_PRESETS = {
+  appendicitis: {
+    name: 'Nguyễn Hoàng Minh', age: 26, gender: 'Nam', department: 'Ngoại tổng quát',
+    bed: 'Phòng 304 - Giường 02', insuranceType: 'BHYT', bhytRate: 80,
+    pulse: 98, temp: 38.2, bp: '120/75', rr: 19, spo2: 99,
+    chiefComplaint: 'Đau bụng hố chậu phải giờ thứ 14 kèm sốt nhẹ',
+    hpi: 'Cách nhập viện 14 giờ, bệnh nhân đau âm ỉ vùng thượng vị và quanh rốn, kèm chán ăn và buồn nôn 1 lần. Khoảng 6 giờ sau, cơn đau khu trú rõ xuống hố chậu phải, đau tăng khi ho hoặc đi lại, kèm sốt nhẹ 38°C. Chưa dùng thuốc giảm đau.',
+    pmh: 'Khỏe mạnh, chưa từng phẫu thuật ổ bụng. Không dị ứng thuốc.',
+    exam: 'Bệnh tỉnh, tiếp xúc tốt, môi hơi khô. Bụng không chướng, ấn đau chói điểm McBurney, phản ứng thành bụng khu trú hố chậu phải rõ, dấu Blumberg dương tính vùng hố chậu phải, không có đề kháng lan tỏa toàn bụng.',
+    summary: 'Bệnh nhân nam 26 tuổi, nhập viện vì đau bụng chuyển khu trú hố chậu phải giờ thứ 14 kèm sốt nhẹ, ấn đau và có phản ứng thành bụng hố chậu phải.',
+    preliminaryDx: 'Theo dõi viêm ruột thừa cấp chưa biến chứng',
+    icd10: 'K35.8',
+    differentialDx: 'Viêm túi thừa manh tràng, cơn đau quặn thận phải, viêm hạch mạc treo',
+    progressNote: 'Ngày 1 nhập viện: Tỉnh táo, sốt 38,2°C, đau liên tục vùng hố chậu phải, ấn đau điểm McBurney (+), phản ứng thành bụng khu trú hố chậu phải.',
+    careLevel: 'Chăm sóc cấp II — Theo dõi sinh hiệu và dấu hiệu bụng ngoại khoa mỗi 2–4 giờ',
+    diet: 'Nhịn ăn uống hoàn toàn chuẩn bị phẫu thuật',
+    hiddenGroundTruth: 'Viêm ruột thừa cấp giờ thứ 14 chưa vỡ mủ. Công thức máu bạch cầu tăng 14,8 G/L (bạch cầu đa nhân trung tính 83%), CRP tăng 42 mg/L; siêu âm bụng thấy hình ảnh ruột thừa đường kính 10 mm, ấn không xẹp, thâm nhiễm mỡ xung quanh. Hướng xử trí: nhịn ăn, bù dịch đẳng trương, kháng sinh dự phòng phủ vi khuẩn Gram âm và kỵ khí, phẫu thuật nội soi cắt ruột thừa sớm.'
+  },
+  ugib: {
+    name: 'Trần Văn Hòa', age: 57, gender: 'Nam', department: 'Tiêu hóa - Gan mật',
+    bed: 'Phòng 210 - Giường 05', insuranceType: 'BHYT', bhytRate: 80,
+    pulse: 114, temp: 36.7, bp: '95/60', rr: 22, spo2: 97,
+    chiefComplaint: 'Nôn ra máu đỏ bầm và đi cầu phân đen mùi khắm 6 giờ nay',
+    hpi: 'Bệnh nhân có đau khớp gối 2 tuần nay, tự mua thuốc giảm đau không rõ loại uống hàng ngày. Sáng nay xuất hiện đau rát thượng vị, chóng mặt khi đứng dậy, sau đó nôn 2 lần ra dịch lẫn máu đỏ bầm khoảng 300 ml và đi cầu phân đen sệt mùi khắm.',
+    pmh: 'Thoái hóa khớp gối, tiền sử đau thượng vị nhiều năm chưa nội soi dạ dày. Uống rượu mức trung bình.',
+    exam: 'Bệnh tỉnh nhưng mệt, da xanh, niêm mạc nhợt, chi hơi lạnh, mạch quay nhanh nhẹ. Bụng mềm, ấn tức nhẹ thượng vị, không đề kháng. Thăm trực tràng có phân đen theo găng.',
+    summary: 'Bệnh nhân nam 57 tuổi, tiền sử dùng thuốc giảm đau kéo dài, nhập viện vì hội chứng xuất huyết tiêu hóa trên mức độ trung bình–nặng có dấu hiệu giảm thể tích tuần hoàn.',
+    preliminaryDx: 'Xuất huyết tiêu hóa trên nghĩ do loét dạ dày tá tràng liên quan thuốc kháng viêm không steroid',
+    icd10: 'K92.2',
+    differentialDx: 'Xuất huyết tiêu hóa trên do vỡ giãn tĩnh mạch thực quản, rách tâm vị Mallory-Weiss',
+    progressNote: 'Ngày 1 nhập viện: Mệt, da niêm nhợt, mạch nhanh 114 lần/phút, huyết áp 95/60 mmHg, chưa nôn thêm tại khoa nhưng còn tiêu phân đen.',
+    careLevel: 'Chăm sóc cấp I — Lập 2 đường truyền tĩnh mạch lớn, theo dõi sinh hiệu và lượng máu mất mỗi giờ',
+    diet: 'Nhịn ăn uống hoàn toàn chuẩn bị nội soi thực quản dạ dày tá tràng cấp cứu',
+    hiddenGroundTruth: 'Xuất huyết tiêu hóa trên mức độ trung bình–nặng do loét hành tá tràng (Forrest IIa) liên quan thuốc kháng viêm không steroid. Hemoglobin giảm còn 8,2 g/dL, Ure tăng nhẹ (tỷ lệ Ure/Creatinin tăng). Xử trí: hồi sức dịch tinh thể, truyền hồng cầu lắng nếu Hb < 7 g/dL hoặc huyết động không ổn định, thuốc ức chế bơm proton đường tĩnh mạch liều cao (Esomeprazol bolus 80 mg rồi truyền duy trì 8 mg/giờ), nội soi tiêu hóa trên cầm máu trong vòng 24 giờ.'
+  },
+  stemi: {
+    name: 'Lê Quốc Dũng', age: 62, gender: 'Nam', department: 'Tim mạch',
+    bed: 'Phòng Cấp cứu Tim mạch - Giường 01', insuranceType: 'BHYT', bhytRate: 80,
+    pulse: 104, temp: 36.6, bp: '145/85', rr: 24, spo2: 94,
+    chiefComplaint: 'Đau thắt ngực trái dữ dội lan lên vai trái giờ thứ 2 kèm vã mồ hôi',
+    hpi: 'Cách nhập viện 2 giờ, khi đang nghỉ ngơi bệnh nhân đột ngột đau nặng đè ép sau xương ức, lan lên cổ và cánh tay trái, kéo dài liên tục trên 30 phút không giảm khi nghỉ, kèm vã mồ hôi lạnh và buồn nôn.',
+    pmh: 'Tăng huyết áp 10 năm uống thuốc không đều, rối loạn lipid máu, hút thuốc lá 30 gói-năm.',
+    exam: 'Bệnh tỉnh, vẻ mặt lo âu, vã mồ hôi. Tim đều nhanh, không âm thổi bệnh lý. Phổi ít ran ẩm nhẹ hai đáy. Chi ấm, mạch tứ chi rõ đều hai bên.',
+    summary: 'Bệnh nhân nam 62 tuổi, nhiều yếu tố nguy cơ tim mạch, nhập viện giờ thứ 2 vì cơn đau thắt ngực điển hình kiểu mạch vành kéo dài kèm rối loạn thần kinh thực vật.',
+    preliminaryDx: 'Theo dõi hội chứng vành cấp / Nhồi máu cơ tim cấp giờ thứ 2',
+    icd10: 'I21.9',
+    differentialDx: 'Bóc tách động mạch chủ cấp, thuyên tắc phổi cấp, viêm màng ngoài tim cấp',
+    progressNote: 'Ngày 1 nhập viện: Đau ngực trái mức độ 8/10, vã mồ hôi lạnh, SpO2 94% khí trời, cần đo điện tâm đồ 12 chuyển đạo ngay trong 10 phút đầu.',
+    careLevel: 'Chăm sóc cấp I — Mắc monitor theo dõi nhịp tim liên tục, chuẩn bị tái tưới máu mạch vành cấp cứu',
+    diet: 'Nhịn ăn tạm thời chờ can thiệp mạch vành qua da',
+    hiddenGroundTruth: 'Nhồi máu cơ tim cấp có đoạn ST chênh lên thành trước rộng giờ thứ 2 (Killip II). Điện tâm đồ ST chênh lên vòm từ V1–V5, Troponin siêu nhạy tăng động học. Xử trí: đo điện tâm đồ ngay, kháng kết tập tiểu cầu kép (Aspirin + thuốc ức chế thụ thể P2Y12), kháng đông (Enoxaparin hoặc Heparin không phân đoạn), Statin liều cao, giảm đau, thở oxy nếu SpO2 < 90% và chuyển can thiệp động mạch vành qua da thì đầu khẩn cấp.'
+  },
+  dka: {
+    name: 'Võ Thị Ngọc Lan', age: 29, gender: 'Nữ', department: 'Nội tiết',
+    bed: 'Phòng 106 - Giường 04', insuranceType: 'BHYT', bhytRate: 80,
+    pulse: 118, temp: 37.8, bp: '100/65', rr: 28, spo2: 98,
+    chiefComplaint: 'Mệt lả, buồn nôn, đau bụng lan tỏa và thở nhanh sâu 2 ngày nay',
+    hpi: 'Bệnh nhân đái tháo đường típ 1 nhưng 3 ngày nay tự ngưng tiêm Insulin vì ăn uống kém do cảm cúm. 2 ngày nay khát nước dữ dội, tiểu rất nhiều, nôn ói nhiều lần, đau bụng âm ỉ kèm mệt lả và thở dốc sâu.',
+    pmh: 'Đái tháo đường típ 1 phát hiện năm 19 tuổi, đang dùng phác đồ Insulin nhiều mũi.',
+    exam: 'Bệnh tỉnh nhưng lừ đừ, dấu mất nước rõ (môi khô, lưỡi khô, mắt trũng, véo da mất chậm), thở nhanh sâu kiểu Kussmaul, hơi thở có mùi trái cây chín (aceton). Bụng mềm, ấn đau lan tỏa nhẹ, không đề kháng.',
+    summary: 'Bệnh nhân nữ 29 tuổi, đái tháo đường típ 1 ngưng Insulin, nhập viện với hội chứng mất nước nặng, thở Kussmaul và rối loạn tiêu hóa.',
+    preliminaryDx: 'Theo dõi nhiễm toan ceton do đái tháo đường',
+    icd10: 'E10.1',
+    differentialDx: 'Tăng áp lực thẩm thấu máu, nhiễm toan lactic, bụng ngoại khoa cấp',
+    progressNote: 'Ngày 1 nhập viện: Lừ đừ, thở nhanh sâu 28 lần/phút, mạch nhanh 118 lần/phút, dấu mất nước nặng, đường huyết mao mạch tại cấp cứu báo vượt ngưỡng đo (> 27 mmol/L).',
+    careLevel: 'Chăm sóc cấp I — Theo dõi tri giác, đường huyết mao mạch mỗi giờ và điện giải đồ mỗi 2–4 giờ',
+    diet: 'Nhịn ăn tạm thời, nuôi dưỡng và bù dịch điện giải đường tĩnh mạch',
+    hiddenGroundTruth: 'Nhiễm toan ceton do đái tháo đường mức độ trung bình–nặng khởi phát do ngưng Insulin. Đường huyết 29 mmol/L, khí máu động mạch toan chuyển hóa tăng khoảng trống anion (pH 7,16, HCO3- 10 mmol/L), ceton niệu/máu dương tính mạnh, Kali máu bình thường giả tạo cần theo dõi sát. Xử trí: bù dịch Natri clorid 0,9% tích cực, bù Kali khi K+ < 5,2 mmol/L, truyền Insulin tác dụng nhanh liên tục qua bơm tiêm điện, chuyển sang Glucose 5% khi đường huyết < 13,9 mmol/L.'
+  },
+  urosepsis: {
+    name: 'Đặng Thị Bích', age: 68, gender: 'Nữ', department: 'Cấp cứu',
+    bed: 'Phòng Hồi sức - Giường 03', insuranceType: 'BHYT', bhytRate: 95,
+    pulse: 122, temp: 39.4, bp: '85/50', rr: 26, spo2: 93,
+    chiefComplaint: 'Sốt cao lạnh run, tiểu gắt buốt và lơ mơ ngày thứ 3',
+    hpi: '3 ngày nay bệnh nhân tiểu buốt, tiểu lắt nhắt, đau âm ỉ vùng hông lưng phải và sốt cao từng cơn. Từ sáng nay bệnh nhân sốt 39,5°C kèm rét run dữ dội, nói sảng, mệt lả, tiểu rất ít nên người nhà đưa đi cấp cứu.',
+    pmh: 'Sỏi thận phải kích thước 12 mm phát hiện 2 năm chưa tán sỏi, đái tháo đường típ 2.',
+    exam: 'Bệnh lơ mơ (Glasgow 13 điểm), da niêm ẩm nóng, đầu chi tái nhẹ, thời gian đổ đầy mao mạch 3 giây. Ấn đau và rung thận phải dương tính rõ. Tim nhanh đều, phổi ít ran ẩm nhẹ.',
+    summary: 'Bệnh nhân nữ 68 tuổi, tiền sử sỏi thận phải và đái tháo đường típ 2, nhập viện với hội chứng nhiễm trùng nặng, tụt huyết áp và rối loạn tri giác nghi nguồn gốc đường tiết niệu.',
+    preliminaryDx: 'Theo dõi sốc nhiễm khuẩn đường tiết niệu trên nền sỏi thận phải gây tắc nghẽn',
+    icd10: 'A41.9',
+    differentialDx: 'Viêm đường mật cấp, sốc giảm thể tích, viêm phổi nặng biến chứng sốc nhiễm khuẩn',
+    progressNote: 'Ngày 1 nhập viện: Sốt 39,4°C, tụt huyết áp 85/50 mmHg, mạch 122 lần/phút, nhịp thở 26 lần/phút, lơ mơ, cần hồi sức gói giờ đầu sốc nhiễm khuẩn ngay.',
+    careLevel: 'Chăm sóc cấp I — Thở oxy, mắc monitor liên tục, đặt thông tiểu theo dõi nước tiểu theo giờ',
+    diet: 'Nhịn ăn tạm thời chờ đánh giá can thiệp giải áp đường tiết niệu',
+    hiddenGroundTruth: 'Sốc nhiễm khuẩn từ đường tiết niệu do viêm thận bể thận cấp tắc nghẽn vì sỏi niệu quản phải. Bạch cầu tăng 21 G/L, Procalcitonin > 15 ng/mL, Lactate máu 4,2 mmol/L, Creatinin tăng, siêu âm thận phải ứ nước độ II có sỏi kẹt niệu quản. Xử trí gói giờ đầu: cấy máu và cấy nước tiểu trước kháng sinh, kháng sinh tĩnh mạch phổ rộng trong giờ đầu (Meropenem hoặc Piperacillin/Tazobactam), bù dịch tinh thể 30 ml/kg, vận mạch Noradrenalin duy trì huyết áp trung bình >= 65 mmHg, hội chẩn Ngoại Tiết niệu giải áp sớm (đặt JJ hoặc dẫn lưu thận ra da).'
+  }
+};
 
 /* ==================== DANH MỤC CẬN LÂM SÀNG (BHYT / THU PHÍ) ==================== */
 const CLS_CATALOG = [
@@ -514,10 +826,9 @@ const state = {
   activeTab: 'record',
   activeDayIndex: 0,
   authMode: 'login',
-  pendingDownvote: null // { type, excerpt, msgIdx }
+  pendingDownvote: null
 };
 
-// Cơ chế gom lưu tự động (debounce 2,5 giây) tránh nghẽn LockService
 const syncQueue = {
   timer: null,
   pendingCaseId: null,
@@ -643,7 +954,6 @@ async function callAI(prompt, systemInstruction, jsonMode = false, taskType = ''
 function scheduleSync(caseObj, immediate = false) {
   if (!state.token || !caseObj || caseObj.isSample) return;
 
-  // Nếu đang chờ lưu một ca KHÁC, đẩy ca đó lên trước
   if (syncQueue.pendingCaseId && syncQueue.pendingCaseId !== caseObj.id) {
     flushPendingSync();
   }
@@ -764,17 +1074,19 @@ function ensurePersonalEditableCase() {
 
 async function deleteCase(caseId, ev) {
   ev.stopPropagation();
-  if (!confirm('Bạn có chắc muốn xóa vĩnh viễn ca bệnh này khỏi tài khoản?')) return;
+  if (!confirm('Bạn có chắc muốn xóa vĩnh viễn ca bệnh này?')) return;
   try {
-    setSyncStatus('syncing', 'Đang xóa...');
-    await apiCall('deleteCase', { caseId });
+    if (state.token) {
+      setSyncStatus('syncing', 'Đang xóa...');
+      await apiCall('deleteCase', { caseId });
+      setSyncStatus('idle', 'Đã lưu đám mây');
+    }
     state.cases = state.cases.filter(c => c.id !== caseId);
     if (syncQueue.pendingCaseId === caseId) syncQueue.pendingCaseId = null;
     if (state.activeCaseId === caseId) {
       state.activeCaseId = state.cases[0].id;
       state.activeDayIndex = 0;
     }
-    setSyncStatus('idle', 'Đã lưu đám mây');
     showToast('Đã xóa ca bệnh.', 'success');
     renderAll();
   } catch (err) {
@@ -978,12 +1290,8 @@ async function rateAiOutput(type, score, excerpt, msgIdx = null) {
 
   try {
     await apiCall('submitFeedback', {
-      type,
-      rating: 1,
-      tags: ['Hữu ích'],
-      comment: 'Đánh giá tích cực',
-      caseId: state.activeCaseId,
-      aiExcerpt: excerpt
+      type, rating: 1, tags: ['Hữu ích'], comment: 'Đánh giá tích cực',
+      caseId: state.activeCaseId, aiExcerpt: excerpt
     });
     markRatedLocally(type, msgIdx, 1);
     showToast('Cảm ơn đánh giá của bạn!', 'success');
@@ -1045,13 +1353,9 @@ function markRatedLocally(type, msgIdx, score) {
   }
 }
 
-/* ==================== TẠO CA LÂM SÀNG MỚI BẰNG AI ==================== */
-function openNewCaseModal() {
-  if (!state.token) {
-    showToast('Hãy đăng nhập để tạo và lưu ca lâm sàng riêng của bạn.', 'warning');
-    openAuthModal('login');
-    return;
-  }
+/* ==================== TẠO CA LÂM SÀNG (AI TỰ ĐỘNG & TỰ SOẠN CÓ GỢI Ý) ==================== */
+function openNewCaseModal(defaultTab = 'ai') {
+  switchNewCaseTab(defaultTab);
   document.getElementById('newCaseModal').classList.remove('hidden');
   document.getElementById('newCaseModal').classList.add('flex');
 }
@@ -1061,8 +1365,273 @@ function closeNewCaseModal() {
   document.getElementById('newCaseModal').classList.remove('flex');
 }
 
+function switchNewCaseTab(mode) {
+  const isManual = mode === 'manual';
+  document.getElementById('formAICase').classList.toggle('hidden', isManual);
+  document.getElementById('formManualCase').classList.toggle('hidden', !isManual);
+  document.getElementById('newCaseTabAI').className = 'flex-1 py-2.5 ' + (!isManual ? 'tab-active' : 'text-slate-500 hover:text-sky-600');
+  document.getElementById('newCaseTabManual').className = 'flex-1 py-2.5 ' + (isManual ? 'tab-active' : 'text-slate-500 hover:text-sky-600');
+}
+
+function toggleManualBhytRate() {
+  const ins = document.getElementById('mInsType').value;
+  const rateEl = document.getElementById('mBhytRate');
+  if (ins === 'Thu phí') rateEl.value = '0';
+  else if (rateEl.value === '0') rateEl.value = '80';
+}
+
+function applyManualPreset() {
+  const key = document.getElementById('manualPresetSelect').value;
+  if (!key || !MANUAL_CASE_PRESETS[key]) return;
+  const p = MANUAL_CASE_PRESETS[key];
+
+  document.getElementById('mName').value = p.name;
+  document.getElementById('mAge').value = p.age;
+  document.getElementById('mGender').value = p.gender;
+  document.getElementById('mDept').value = p.department;
+  document.getElementById('mBed').value = p.bed;
+  document.getElementById('mInsType').value = p.insuranceType;
+  document.getElementById('mBhytRate').value = String(p.bhytRate);
+
+  document.getElementById('mPulse').value = p.pulse;
+  document.getElementById('mTemp').value = p.temp;
+  document.getElementById('mBp').value = p.bp;
+  document.getElementById('mRr').value = p.rr;
+  document.getElementById('mSpo2').value = p.spo2;
+
+  document.getElementById('mChief').value = p.chiefComplaint;
+  document.getElementById('mHpi').value = p.hpi;
+  document.getElementById('mPmh').value = p.pmh;
+  document.getElementById('mExam').value = p.exam;
+  document.getElementById('mSummary').value = p.summary;
+  document.getElementById('mPrelim').value = p.preliminaryDx;
+  document.getElementById('mIcd').value = p.icd10;
+  document.getElementById('mDiff').value = p.differentialDx;
+  document.getElementById('mProgress').value = p.progressNote;
+  document.getElementById('mCare').value = p.careLevel;
+  document.getElementById('mDiet').value = p.diet;
+  document.getElementById('mGroundTruth').value = p.hiddenGroundTruth;
+
+  showToast('Đã điền khung mẫu gợi ý. Bạn có thể sửa bất kỳ thông tin nào theo ý mình!', 'info');
+}
+
+function clearManualForm() {
+  document.getElementById('manualPresetSelect').value = '';
+  [
+    'mName', 'mAge', 'mBed', 'mPulse', 'mTemp', 'mBp', 'mRr', 'mSpo2',
+    'mChief', 'mHpi', 'mPmh', 'mExam', 'mSummary', 'mPrelim', 'mIcd',
+    'mDiff', 'mProgress', 'mCare', 'mDiet', 'mGroundTruth'
+  ].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('mGender').value = 'Nam';
+  document.getElementById('mInsType').value = 'BHYT';
+  document.getElementById('mBhytRate').value = '80';
+}
+
+async function aiSuggestManualFields() {
+  if (!state.token) {
+    showToast('Vui lòng đăng nhập để dùng tính năng AI gợi ý điền ô còn trống.', 'warning');
+    openAuthModal('login');
+    return;
+  }
+
+  const btn = document.getElementById('btnManualAISuggest');
+  btn.disabled = true;
+  btn.textContent = 'AI đang gợi ý...';
+
+  const current = {
+    name: document.getElementById('mName').value.trim(),
+    age: document.getElementById('mAge').value.trim(),
+    gender: document.getElementById('mGender').value,
+    department: document.getElementById('mDept').value,
+    bed: document.getElementById('mBed').value.trim(),
+    pulse: document.getElementById('mPulse').value.trim(),
+    temp: document.getElementById('mTemp').value.trim(),
+    bp: document.getElementById('mBp').value.trim(),
+    rr: document.getElementById('mRr').value.trim(),
+    spo2: document.getElementById('mSpo2').value.trim(),
+    chiefComplaint: document.getElementById('mChief').value.trim(),
+    hpi: document.getElementById('mHpi').value.trim(),
+    pmh: document.getElementById('mPmh').value.trim(),
+    exam: document.getElementById('mExam').value.trim(),
+    summary: document.getElementById('mSummary').value.trim(),
+    preliminaryDx: document.getElementById('mPrelim').value.trim(),
+    icd10: document.getElementById('mIcd').value.trim(),
+    differentialDx: document.getElementById('mDiff').value.trim(),
+    progressNote: document.getElementById('mProgress').value.trim(),
+    careLevel: document.getElementById('mCare').value.trim(),
+    diet: document.getElementById('mDiet').value.trim(),
+    hiddenGroundTruth: document.getElementById('mGroundTruth').value.trim()
+  };
+
+  const filledLines = Object.entries(current)
+    .filter(([_, v]) => v !== '')
+    .map(([k, v]) => `- ${k}: ${v}`)
+    .join('\n');
+
+  const prompt = `Người dùng đang tự soạn một ca lâm sàng thực hành và đã nhập một số dữ liệu dưới đây:
+${filledLines || '(Chưa nhập gì ngoài chuyên khoa)'}
+
+Hãy gợi ý hoàn thiện TẤT CẢ các trường thông tin sao cho nhất quán tuyệt đối với phần người dùng đã nhập (giữ nguyên ý đồ chuyên môn của người dùng). Trả về DUY NHẤT một đối tượng JSON theo đúng các khóa:
+{
+  "name": "Họ tên người Việt",
+  "age": 50,
+  "bed": "Phòng ... - Giường ...",
+  "pulse": 96,
+  "temp": 38.2,
+  "bp": "120/75",
+  "rr": 20,
+  "spo2": 96,
+  "chiefComplaint": "Lý do vào viện",
+  "hpi": "Bệnh sử chi tiết",
+  "pmh": "Tiền sử bản thân, gia đình, dị ứng",
+  "exam": "Khám thực thể toàn thân và cơ quan",
+  "summary": "Tóm tắt bệnh án ngắn gọn",
+  "preliminaryDx": "Chẩn đoán sơ bộ",
+  "icd10": "Mã ICD-10",
+  "differentialDx": "2-3 chẩn đoán phân biệt",
+  "progressNote": "Diễn biến ngày 1 nhập viện",
+  "careLevel": "Chế độ chăm sóc",
+  "diet": "Chế độ dinh dưỡng",
+  "hiddenGroundTruth": "Chẩn đoán xác định đầy đủ, kết quả CLS điển hình dự kiến và hướng xử trí chuẩn"
+}`;
+
+  try {
+    const raw = await callAI(prompt, 'Chỉ trả về JSON hợp lệ bằng tiếng Việt y khoa chuẩn xác.', true, 'generate_case');
+    const data = extractJSON(raw);
+
+    // Chỉ điền những ô hiện đang trống để KHÔNG ghi đè nội dung người dùng tự nhập
+    const fieldMap = [
+      ['mName', 'name'], ['mAge', 'age'], ['mBed', 'bed'],
+      ['mPulse', 'pulse'], ['mTemp', 'temp'], ['mBp', 'bp'], ['mRr', 'rr'], ['mSpo2', 'spo2'],
+      ['mChief', 'chiefComplaint'], ['mHpi', 'hpi'], ['mPmh', 'pmh'], ['mExam', 'exam'],
+      ['mSummary', 'summary'], ['mPrelim', 'preliminaryDx'], ['mIcd', 'icd10'], ['mDiff', 'differentialDx'],
+      ['mProgress', 'progressNote'], ['mCare', 'careLevel'], ['mDiet', 'diet'], ['mGroundTruth', 'hiddenGroundTruth']
+    ];
+
+    let filledCount = 0;
+    fieldMap.forEach(([elId, key]) => {
+      const el = document.getElementById(elId);
+      if (el && !el.value.trim() && data[key] != null && String(data[key]).trim() !== '') {
+        el.value = String(data[key]);
+        filledCount++;
+      }
+    });
+
+    if (filledCount > 0) {
+      showToast(`AI đã gợi ý điền ${filledCount} ô còn trống. Bạn hãy kiểm tra và chỉnh sửa lại theo ý muốn!`, 'success');
+    } else {
+      showToast('Tất cả các ô đã có dữ liệu. Bấm "Xóa trắng" hoặc xóa riêng ô bạn muốn AI gợi ý lại.', 'info');
+    }
+  } catch (err) {
+    showToast('Lỗi gợi ý AI: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ AI gợi ý điền ô còn trống';
+  }
+}
+
+function saveManualCase(e) {
+  e.preventDefault();
+  const name = document.getElementById('mName').value.trim();
+  const age = Number(document.getElementById('mAge').value || 0);
+  const chief = document.getElementById('mChief').value.trim();
+
+  if (!name || !chief) {
+    showToast('Vui lòng nhập tối thiểu Họ tên bệnh nhân và Lý do vào viện.', 'warning');
+    return;
+  }
+
+  const today = new Date().toLocaleDateString('vi-VN');
+  const dept = document.getElementById('mDept').value;
+  const insType = document.getElementById('mInsType').value;
+  const bhytRate = insType === 'BHYT' ? Number(document.getElementById('mBhytRate').value || 80) : 0;
+
+  const hpi = document.getElementById('mHpi').value.trim();
+  const exam = document.getElementById('mExam').value.trim();
+  const prelim = document.getElementById('mPrelim').value.trim();
+  const progress = document.getElementById('mProgress').value.trim();
+  const groundTruth = document.getElementById('mGroundTruth').value.trim();
+
+  const fallbackTruth = `Ca lâm sàng tự soạn tại khoa ${dept}. Chẩn đoán sơ bộ: ${prelim || chief}. Khám: ${exam || hpi || chief}. Hãy mô phỏng kết quả CLS và diễn tiến sát với dữ liệu bệnh án này.`;
+
+  const newCase = {
+    id: 'case_' + Date.now(),
+    isSample: false,
+    isCustom: true,
+    updatedAt: new Date().toISOString(),
+    hiddenGroundTruth: groundTruth || fallbackTruth,
+    patient: {
+      code: 'HSBA-' + String(Date.now()).slice(-6),
+      name,
+      age: age > 0 ? age : 40,
+      gender: document.getElementById('mGender').value,
+      department: dept,
+      bed: document.getElementById('mBed').value.trim() || 'Phòng 101 - Giường 01',
+      admitDate: today,
+      insuranceType: insType,
+      bhytRate,
+      status: 'Ca tự soạn'
+    },
+    record: {
+      chiefComplaint: chief,
+      hpi: hpi || chief,
+      pmh: document.getElementById('mPmh').value.trim() || 'Chưa ghi nhận bệnh lý đặc biệt.',
+      exam: exam || 'Bệnh tỉnh, tiếp xúc tốt.',
+      summary: document.getElementById('mSummary').value.trim() || `Bệnh nhân ${document.getElementById('mGender').value.toLowerCase()} ${age || 40} tuổi, nhập viện vì ${chief}.`,
+      preliminaryDx: prelim || chief,
+      icd10: document.getElementById('mIcd').value.trim(),
+      differentialDx: document.getElementById('mDiff').value.trim(),
+      reasoning: ''
+    },
+    days: [{
+      dayNumber: 1,
+      date: today,
+      progressNote: progress || `Ngày 1 nhập viện: ${chief}. ${exam}`,
+      vitals: {
+        pulse: Number(document.getElementById('mPulse').value || 82),
+        temp: Number(document.getElementById('mTemp').value || 37.0),
+        bp: document.getElementById('mBp').value.trim() || '120/80',
+        rr: Number(document.getElementById('mRr').value || 18),
+        spo2: Number(document.getElementById('mSpo2').value || 98)
+      },
+      careLevel: document.getElementById('mCare').value.trim() || 'Chăm sóc cấp II — Theo dõi sinh hiệu mỗi 4–6 giờ',
+      diet: document.getElementById('mDiet').value.trim() || 'Chế độ ăn bệnh lý phù hợp',
+      labOrders: [],
+      drugOrders: [],
+      attendingFeedback: ''
+    }],
+    chatHistory: [],
+    evaluation: null
+  };
+
+  state.cases.unshift(newCase);
+  state.activeCaseId = newCase.id;
+  state.activeDayIndex = 0;
+  state.activeTab = 'record';
+
+  clearManualForm();
+  closeNewCaseModal();
+  renderAll();
+
+  if (state.token) {
+    scheduleSync(newCase, true);
+    showToast('Đã tạo hồ sơ ca tự soạn và đồng bộ lên Google Sheets!', 'success');
+  } else {
+    showToast('Đã tạo ca tự soạn trên trình duyệt. Hãy đăng nhập nếu muốn lưu lâu dài lên Google Sheets.', 'warning');
+  }
+}
+
 async function generateAICase(e) {
   e.preventDefault();
+  if (!state.token) {
+    showToast('Hãy đăng nhập để AI tạo và lưu ca lâm sàng riêng của bạn.', 'warning');
+    openAuthModal('login');
+    return;
+  }
+
   const btn = document.getElementById('btnCreateCase');
   const dept = document.getElementById('newCaseDept').value;
   const diff = document.getElementById('newCaseDiff').value;
@@ -1117,6 +1686,7 @@ Trả về DUY NHẤT một đối tượng JSON theo đúng cấu trúc sau:
     const newCase = {
       id: 'case_' + Date.now(),
       isSample: false,
+      isCustom: false,
       updatedAt: new Date().toISOString(),
       hiddenGroundTruth: data.hiddenGroundTruth || '',
       patient: {
@@ -1171,7 +1741,7 @@ Trả về DUY NHẤT một đối tượng JSON theo đúng cấu trúc sau:
     showToast('Lỗi tạo ca bệnh: ' + err.message, 'error');
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Tạo hồ sơ nhập viện';
+    btn.textContent = 'Tạo hồ sơ nhập viện bằng AI';
   }
 }
 
@@ -1207,7 +1777,9 @@ function renderPatientList() {
     const active = c.id === state.activeCaseId;
     const badge = c.isSample
       ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">Ca mẫu</span>`
-      : `<span class="text-[10px] px-1.5 py-0.5 rounded bg-sky-100 text-sky-700 font-medium">Của tôi</span>`;
+      : c.isCustom
+        ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-violet-100 text-violet-700 font-medium">Tự soạn</span>`
+        : `<span class="text-[10px] px-1.5 py-0.5 rounded bg-sky-100 text-sky-700 font-medium">Của tôi</span>`;
     return `
       <div onclick="selectCase('${c.id}')" class="p-3 rounded-xl border cursor-pointer transition ${active ? 'bg-sky-50 border-sky-400 shadow-sm' : 'bg-white border-slate-200 hover:border-sky-300'}">
         <div class="flex items-start justify-between gap-2">
@@ -1379,6 +1951,13 @@ function renderRecordTab() {
           </div>
         </div>
 
+        ${c.isCustom ? `
+          <details class="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3">
+            <summary class="text-xs font-bold text-amber-900 cursor-pointer">Kịch bản đáp án nền của ca tự soạn (Bấm để xem hoặc chỉnh sửa)</summary>
+            <textarea id="recGroundTruth" rows="3" class="mt-2 w-full px-3 py-2 text-xs border border-amber-300 rounded-lg bg-white">${esc(c.hiddenGroundTruth || '')}</textarea>
+          </details>
+        ` : ''}
+
         ${r.aiFeedback ? `
           <div id="aiRecordFeedback" class="mt-4 p-3.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs leading-relaxed text-indigo-950">
             <div class="whitespace-pre-wrap">${esc(r.aiFeedback)}</div>
@@ -1407,6 +1986,9 @@ function saveRecordForm(immediate = true) {
   c.record.icd10 = document.getElementById('recIcd').value;
   c.record.differentialDx = document.getElementById('recDiff').value;
   c.record.reasoning = document.getElementById('recReasoning').value;
+
+  const gtEl = document.getElementById('recGroundTruth');
+  if (gtEl) c.hiddenGroundTruth = gtEl.value;
 
   renderPatientList();
   renderPatientBanner();
@@ -1538,7 +2120,7 @@ function addLabOrder(code) {
     price: item.price, payType, status: 'Chờ kết quả', result: '', abnormal: false
   });
   renderClsTab();
-  scheduleSync(c, false); // Gom lưu tự động sau 2,5 giây
+  scheduleSync(c, false);
 }
 
 function addCustomCls() {
@@ -1748,7 +2330,7 @@ function addDrugOrder() {
     payType: document.getElementById('drugPay').value
   });
   renderTreatmentTab();
-  scheduleSync(c, false); // Gom lưu tự động sau 2,5 giây
+  scheduleSync(c, false);
 }
 
 function removeDrugOrder(idx) {
@@ -1927,7 +2509,7 @@ function renderBillingTab() {
   `;
 }
 
-/* ==================== NGĂN KÉO HỘI CHẨN & GỢI Ý AI (CÓ BỐI CẢNH ĐẦY ĐỦ + ĐÁNH GIÁ 👍/👎) ==================== */
+/* ==================== NGĂN KÉO HỘI CHẨN & GỢI Ý AI ==================== */
 function toggleDrawer(open) {
   const el = document.getElementById('aiDrawer');
   el.classList.toggle('translate-x-full', !open);
@@ -1983,7 +2565,6 @@ async function runConsultPrompt(userText, hintLevel) {
   const c = ensurePersonalEditableCase();
   if (!c.chatHistory) c.chatHistory = [];
 
-  // Lấy tối đa 6 tin nhắn hội chẩn gần nhất để AI giữ mạch trao đổi
   const recentHistory = c.chatHistory.slice(-6)
     .map(m => `${m.role === 'user' ? 'Học viên' : 'Bác sĩ Cố vấn'}: ${m.text}`)
     .join('\n');
