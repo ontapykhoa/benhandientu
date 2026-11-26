@@ -42,7 +42,9 @@
       <button onclick="toggleDrawer(true)" class="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 font-medium shadow">
         Trợ giúp / Hội chẩn AI
       </button>
-
+      <button onclick="openFeedbackModal()" class="text-xs px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 font-medium">
+        Góp ý
+      </button>
       <div id="userControls" class="flex items-center gap-2">
         <button onclick="openAuthModal('login')" class="text-xs px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 font-medium">
           Đăng nhập
@@ -169,7 +171,45 @@
       </form>
     </div>
   </div>
-
+  modal góp ý
+<div id="feedbackModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+    <div class="bg-emerald-700 text-white px-5 py-3.5 flex items-center justify-between">
+      <h3 class="font-bold text-sm">Góp ý cải thiện AI & Trang web</h3>
+      <button onclick="closeFeedbackModal()" class="text-emerald-200 hover:text-white">✕</button>
+    </div>
+    <form onsubmit="submitGeneralFeedback(event)" class="p-5 space-y-3 text-xs">
+      <div>
+        <label class="block font-semibold text-slate-700 mb-1">Hạng mục góp ý</label>
+        <select id="fbCategory" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+          <option value="Chất lượng chuyên môn AI">Chất lượng chuyên môn AI</option>
+          <option value="Phong cách trả lời AI">Phong cách trả lời AI (dài/ngắn, cách xưng hô)</option>
+          <option value="Danh mục thuốc / CLS / BHYT">Danh mục thuốc / CLS / BHYT</option>
+          <option value="Giao diện & Trải nghiệm web">Giao diện & Trải nghiệm web</option>
+        </select>
+      </div>
+      <div>
+        <label class="block font-semibold text-slate-700 mb-1">Mức độ hài lòng (1–5 sao)</label>
+        <select id="fbRating" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+          <option value="5">5 - Rất hài lòng</option>
+          <option value="4">4 - Tốt, cần tinh chỉnh nhẹ</option>
+          <option value="3">3 - Bình thường</option>
+          <option value="2">2 - Chưa đạt kỳ vọng</option>
+          <option value="1">1 - Có lỗi nghiêm trọng</option>
+        </select>
+      </div>
+      <div>
+        <label class="block font-semibold text-slate-700 mb-1">Nội dung góp ý chi tiết</label>
+        <textarea id="fbComment" rows="4" required placeholder="Mô tả điểm bạn muốn AI hoặc trang web làm tốt hơn..."
+          class="w-full px-3 py-2 border border-slate-300 rounded-lg"></textarea>
+      </div>
+      <div class="flex justify-end gap-2 pt-1">
+        <button type="button" onclick="closeFeedbackModal()" class="px-3 py-1.5 rounded-lg border border-slate-300">Hủy</button>
+        <button id="btnSendFb" type="submit" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">Gửi góp ý</button>
+      </div>
+    </form>
+  </div>
+</div>
   <!-- MODAL TẠO CA LÂM SÀNG MỚI BẰNG AI -->
   <div id="newCaseModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 p-4">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
