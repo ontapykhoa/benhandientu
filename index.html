@@ -24,27 +24,30 @@
       <div class="w-9 h-9 rounded-lg bg-sky-500 flex items-center justify-center font-bold text-lg shadow">Y</div>
       <div>
         <h1 class="font-bold text-sm md:text-base leading-tight">VN-EMR — Bệnh án Điện tử Mô phỏng</h1>
-        <p class="text-[11px] text-slate-300">Rèn luyện hồ sơ bệnh án • Chỉ định BHYT/Thu phí • Tờ điều trị AI</p>
+        <p class="text-[11px] text-slate-300">Hồ sơ bệnh án • Cận lâm sàng BHYT/Thu phí • Tờ điều trị AI</p>
       </div>
     </div>
 
     <div class="flex items-center gap-2">
-      <span id="syncBadge" class="hidden md:inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+      <button id="syncBadge" onclick="flushPendingSync()" title="Bấm để đồng bộ ngay lên Google Sheets"
+        class="hidden md:inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">
         <span id="syncDot" class="w-2 h-2 rounded-full bg-slate-400"></span>
         <span id="syncText">Chưa đăng nhập</span>
-      </span>
+      </button>
 
       <button onclick="openSettingsModal()" class="text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center gap-1.5" title="Cài đặt URL máy chủ">
         <span id="connDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
         <span class="hidden sm:inline">Máy chủ</span>
       </button>
 
-      <button onclick="toggleDrawer(true)" class="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 font-medium shadow">
-        Trợ giúp / Hội chẩn AI
-      </button>
-      <button onclick="openFeedbackModal()" class="text-xs px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 font-medium">
+      <button onclick="openFeedbackModal()" class="text-xs px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 font-medium shadow">
         Góp ý
       </button>
+
+      <button onclick="toggleDrawer(true)" class="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 font-medium shadow">
+        Trợ giúp AI
+      </button>
+
       <div id="userControls" class="flex items-center gap-2">
         <button onclick="openAuthModal('login')" class="text-xs px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 font-medium">
           Đăng nhập
@@ -88,10 +91,8 @@
 
     <!-- CỘT PHẢI: KHÔNG GIAN LÀM VIỆC HỒ SƠ BỆNH ÁN -->
     <main class="flex-1 flex flex-col overflow-hidden bg-slate-50">
-      <!-- THÔNG TIN HÀNH CHÍNH & SINH HIỆU -->
       <div id="patientBanner" class="bg-white border-b border-slate-200 px-4 py-3 shrink-0"></div>
 
-      <!-- THANH CHUYỂN TAB -->
       <div class="bg-white border-b border-slate-200 px-4 flex items-center justify-between shrink-0 overflow-x-auto">
         <div class="flex gap-5 text-sm">
           <button onclick="switchTab('record')" id="tab-record" class="py-2.5 whitespace-nowrap tab-active">1. Hồ sơ bệnh án</button>
@@ -102,7 +103,6 @@
         <div id="daySelectorWrap" class="flex items-center gap-2 py-1.5 text-xs"></div>
       </div>
 
-      <!-- NỘI DUNG TAB -->
       <div id="mainContent" class="flex-1 overflow-y-auto scrollbar-thin p-4"></div>
     </main>
   </div>
@@ -112,7 +112,7 @@
     <div class="p-4 bg-indigo-700 text-white flex items-center justify-between">
       <div>
         <h2 class="font-bold text-sm">Bác sĩ Cố vấn AI — Hội chẩn ca bệnh</h2>
-        <p class="text-[11px] text-indigo-200">Gợi ý phân cấp, không làm lộ đáp án sớm</p>
+        <p class="text-[11px] text-indigo-200">Đối chiếu trực tiếp hồ sơ, CLS & y lệnh đã kê</p>
       </div>
       <button onclick="toggleDrawer(false)" class="px-2.5 py-1 rounded bg-indigo-800 hover:bg-indigo-900 text-xs">Đóng ✕</button>
     </div>
@@ -171,45 +171,7 @@
       </form>
     </div>
   </div>
-  modal góp ý
-<div id="feedbackModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 p-4">
-  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
-    <div class="bg-emerald-700 text-white px-5 py-3.5 flex items-center justify-between">
-      <h3 class="font-bold text-sm">Góp ý cải thiện AI & Trang web</h3>
-      <button onclick="closeFeedbackModal()" class="text-emerald-200 hover:text-white">✕</button>
-    </div>
-    <form onsubmit="submitGeneralFeedback(event)" class="p-5 space-y-3 text-xs">
-      <div>
-        <label class="block font-semibold text-slate-700 mb-1">Hạng mục góp ý</label>
-        <select id="fbCategory" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
-          <option value="Chất lượng chuyên môn AI">Chất lượng chuyên môn AI</option>
-          <option value="Phong cách trả lời AI">Phong cách trả lời AI (dài/ngắn, cách xưng hô)</option>
-          <option value="Danh mục thuốc / CLS / BHYT">Danh mục thuốc / CLS / BHYT</option>
-          <option value="Giao diện & Trải nghiệm web">Giao diện & Trải nghiệm web</option>
-        </select>
-      </div>
-      <div>
-        <label class="block font-semibold text-slate-700 mb-1">Mức độ hài lòng (1–5 sao)</label>
-        <select id="fbRating" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
-          <option value="5">5 - Rất hài lòng</option>
-          <option value="4">4 - Tốt, cần tinh chỉnh nhẹ</option>
-          <option value="3">3 - Bình thường</option>
-          <option value="2">2 - Chưa đạt kỳ vọng</option>
-          <option value="1">1 - Có lỗi nghiêm trọng</option>
-        </select>
-      </div>
-      <div>
-        <label class="block font-semibold text-slate-700 mb-1">Nội dung góp ý chi tiết</label>
-        <textarea id="fbComment" rows="4" required placeholder="Mô tả điểm bạn muốn AI hoặc trang web làm tốt hơn..."
-          class="w-full px-3 py-2 border border-slate-300 rounded-lg"></textarea>
-      </div>
-      <div class="flex justify-end gap-2 pt-1">
-        <button type="button" onclick="closeFeedbackModal()" class="px-3 py-1.5 rounded-lg border border-slate-300">Hủy</button>
-        <button id="btnSendFb" type="submit" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">Gửi góp ý</button>
-      </div>
-    </form>
-  </div>
-</div>
+
   <!-- MODAL TẠO CA LÂM SÀNG MỚI BẰNG AI -->
   <div id="newCaseModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 p-4">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
@@ -257,6 +219,82 @@
     </div>
   </div>
 
+  <!-- MODAL GÓP Ý CHUNG (TẦNG 2) -->
+  <div id="feedbackModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+      <div class="bg-emerald-700 text-white px-5 py-3.5 flex items-center justify-between">
+        <h3 class="font-bold text-sm">Góp ý cải thiện AI & Trang web</h3>
+        <button onclick="closeFeedbackModal()" class="text-emerald-200 hover:text-white">✕</button>
+      </div>
+      <form onsubmit="submitGeneralFeedback(event)" class="p-5 space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Hạng mục góp ý</label>
+          <select id="fbCategory" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+            <option value="Chất lượng chuyên môn AI">Chất lượng chuyên môn AI</option>
+            <option value="Phong cách trả lời AI">Phong cách trả lời AI (độ dài, cách gợi ý, xưng hô)</option>
+            <option value="Danh mục thuốc / CLS / BHYT">Danh mục thuốc / CLS / BHYT</option>
+            <option value="Giao diện & Trải nghiệm web">Giao diện & Trải nghiệm web</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Mức độ hài lòng (1–5 sao)</label>
+          <select id="fbRating" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+            <option value="5">5 ★ — Rất hài lòng</option>
+            <option value="4">4 ★ — Tốt, cần tinh chỉnh nhẹ</option>
+            <option value="3">3 ★ — Bình thường</option>
+            <option value="2">2 ★ — Chưa đạt kỳ vọng</option>
+            <option value="1">1 ★ — Có lỗi nghiêm trọng</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Nội dung góp ý chi tiết</label>
+          <textarea id="fbComment" rows="4" required placeholder="Mô tả điểm bạn muốn AI hoặc trang web làm tốt hơn..."
+            class="w-full px-3 py-2 border border-slate-300 rounded-lg"></textarea>
+        </div>
+        <div class="flex justify-end gap-2 pt-1">
+          <button type="button" onclick="closeFeedbackModal()" class="px-3 py-1.5 rounded-lg border border-slate-300">Hủy</button>
+          <button id="btnSendFb" type="submit" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">Gửi góp ý</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL BÁO LỖI CÂU TRẢ LỜI AI (TẦNG 1 - KHI BẤM 👎) -->
+  <div id="aiDownvoteModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+      <div class="bg-rose-700 text-white px-5 py-3.5 flex items-center justify-between">
+        <h3 class="font-bold text-sm">Góp ý để cải thiện câu trả lời AI này</h3>
+        <button onclick="closeDownvoteModal()" class="text-rose-200 hover:text-white">✕</button>
+      </div>
+      <form onsubmit="submitDownvoteFeedback(event)" class="p-5 space-y-3 text-xs">
+        <div class="space-y-1.5">
+          <div class="font-semibold text-slate-700">Chọn vấn đề bạn gặp phải (chọn nhiều):</div>
+          <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+            <input type="checkbox" name="aiTag" value="Lộ đáp án quá sớm" /> Lộ đáp án quá sớm
+          </label>
+          <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+            <input type="checkbox" name="aiTag" value="Thiếu chính xác chuyên môn" /> Thiếu chính xác về chuyên môn / liều dùng
+          </label>
+          <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+            <input type="checkbox" name="aiTag" value="Quá dài hoặc chung chung" /> Trả lời quá dài dòng hoặc chung chung
+          </label>
+          <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+            <input type="checkbox" name="aiTag" value="Không sát hồ sơ hiện tại" /> Không bám sát CLS / thuốc đã kê
+          </label>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Chi tiết bổ sung (không bắt buộc)</label>
+          <textarea id="aiDownvoteComment" rows="3" placeholder="Ví dụ: Nên nhắc kiểm tra chức năng thận trước khi dùng thuốc này..."
+            class="w-full px-3 py-2 border border-slate-300 rounded-lg"></textarea>
+        </div>
+        <div class="flex justify-end gap-2 pt-1">
+          <button type="button" onclick="closeDownvoteModal()" class="px-3 py-1.5 rounded-lg border border-slate-300">Hủy</button>
+          <button id="btnSendDownvote" type="submit" class="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-semibold">Gửi báo cáo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- MODAL CÀI ĐẶT MÁY CHỦ APPS SCRIPT -->
   <div id="settingsModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 p-4">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
@@ -266,17 +304,22 @@
       </div>
       <div class="p-5 space-y-3.5 text-sm">
         <p class="text-xs text-slate-600">
-          URL ứng dụng web (<code>.../exec</code>) dùng để xác thực tài khoản, lưu ca bệnh vào Google Sheets và gọi Gemini AI an toàn.
+          URL ứng dụng web (<code>.../exec</code>) dùng để xác thực tài khoản, lưu ca bệnh, nhận góp ý và đọc cấu hình vai trò <code>AI_Config</code> trên Google Sheets.
         </p>
         <div>
           <label class="block text-xs font-semibold text-slate-700 mb-1">Google Apps Script Web App URL</label>
           <input id="settingsProxyUrl" type="url" class="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-lg" placeholder="https://script.google.com/macros/s/.../exec" />
         </div>
         <div id="settingsTestResult" class="hidden text-xs p-2.5 rounded-lg border"></div>
-        <div class="flex justify-between items-center pt-2">
-          <button onclick="testBackendConnection()" class="px-3 py-2 text-xs rounded-lg bg-slate-100 hover:bg-slate-200 font-medium border border-slate-300">
-            Kiểm tra kết nối
-          </button>
+        <div class="flex justify-between items-center pt-2 flex-wrap gap-2">
+          <div class="flex gap-1.5">
+            <button onclick="testBackendConnection(false)" class="px-3 py-2 text-xs rounded-lg bg-slate-100 hover:bg-slate-200 font-medium border border-slate-300">
+              Kiểm tra kết nối
+            </button>
+            <button onclick="testBackendConnection(true)" class="px-3 py-2 text-xs rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-medium border border-indigo-200" title="Áp dụng ngay thay đổi từ Sheet AI_Config không cần chờ 10 phút">
+              Làm mới AI_Config
+            </button>
+          </div>
           <div class="flex gap-2">
             <button onclick="closeSettingsModal()" class="px-3 py-2 text-xs rounded-lg border border-slate-300">Đóng</button>
             <button onclick="saveSettings()" class="px-4 py-2 text-xs rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-semibold">Lưu cài đặt</button>
@@ -298,12 +341,10 @@ const GAS_PROXY_URL = "https://script.google.com/macros/s/AKfycby5HWHUF5J0MlhkDl
 
 /* ==================== DANH MỤC CẬN LÂM SÀNG (BHYT / THU PHÍ) ==================== */
 const CLS_CATALOG = [
-  // Huyết học
   { code: 'HH01', group: 'Huyết học', name: 'Tổng phân tích tế bào máu ngoại vi (Công thức máu)', price: 52000, bhyt: true },
   { code: 'HH02', group: 'Huyết học', name: 'Đông máu toàn bộ (PT, INR, aPTT, Fibrinogen)', price: 145000, bhyt: true },
   { code: 'HH03', group: 'Huyết học', name: 'Định nhóm máu hệ ABO và Rh', price: 68000, bhyt: true },
   { code: 'HH04', group: 'Huyết học', name: 'Định lượng D-Dimer', price: 210000, bhyt: true },
-  // Sinh hóa - Miễn dịch
   { code: 'SH01', group: 'Sinh hóa', name: 'Định lượng Glucose máu tĩnh mạch', price: 26000, bhyt: true },
   { code: 'SH02', group: 'Sinh hóa', name: 'Chức năng thận (Ure, Creatinin, ước tính mức lọc cầu thận)', price: 65000, bhyt: true },
   { code: 'SH03', group: 'Sinh hóa', name: 'Men gan (AST, ALT, GGT)', price: 85000, bhyt: true },
@@ -317,11 +358,9 @@ const CLS_CATALOG = [
   { code: 'SH11', group: 'Sinh hóa', name: 'Định lượng Amylase và Lipase máu', price: 115000, bhyt: true },
   { code: 'SH12', group: 'Sinh hóa', name: 'Định lượng HbA1c', price: 120000, bhyt: true },
   { code: 'SH13', group: 'Sinh hóa', name: 'Tổng phân tích nước tiểu 10 thông số', price: 38000, bhyt: true },
-  // Vi sinh
   { code: 'VS01', group: 'Vi sinh', name: 'Cấy máu tìm vi khuẩn hiếu khí và làm kháng sinh đồ (2 chai)', price: 380000, bhyt: true },
   { code: 'VS02', group: 'Vi sinh', name: 'Nhuộm soi và cấy đờm tìm vi khuẩn + kháng sinh đồ', price: 240000, bhyt: true },
   { code: 'VS03', group: 'Vi sinh', name: 'Cấy nước tiểu định lượng và kháng sinh đồ', price: 210000, bhyt: true },
-  // Chẩn đoán hình ảnh & Thăm dò chức năng
   { code: 'CD01', group: 'Chẩn đoán hình ảnh', name: 'Điện tâm đồ 12 chuyển đạo tại giường', price: 55000, bhyt: true },
   { code: 'CD02', group: 'Chẩn đoán hình ảnh', name: 'Chụp X-quang ngực thẳng', price: 85000, bhyt: true },
   { code: 'CD03', group: 'Chẩn đoán hình ảnh', name: 'Chụp X-quang bụng đứng không chuẩn bị', price: 90000, bhyt: true },
@@ -333,12 +372,10 @@ const CLS_CATALOG = [
 
 /* ==================== DANH MỤC THUỐC & DỊCH TRUYỀN BỘ Y TẾ ==================== */
 const DRUG_CATALOG = [
-  // Dịch truyền & Điện giải
   { code: 'DT01', group: 'Dịch truyền', name: 'Natri clorid 0,9% chai 500 ml', route: 'Truyền tĩnh mạch', defaultDose: '500 ml, XXX giọt/phút', price: 14000, bhyt: true },
   { code: 'DT02', group: 'Dịch truyền', name: 'Ringer Lactat chai 500 ml', route: 'Truyền tĩnh mạch', defaultDose: '500 ml, XL giọt/phút', price: 16000, bhyt: true },
   { code: 'DT03', group: 'Dịch truyền', name: 'Glucose 5% chai 500 ml', route: 'Truyền tĩnh mạch', defaultDose: '500 ml, XXX giọt/phút', price: 15000, bhyt: true },
   { code: 'DT04', group: 'Dịch truyền', name: 'Kali clorid 10% ống 10 ml (pha loãng truyền)', route: 'Pha truyền tĩnh mạch', defaultDose: '1 ống pha 500 ml NaCl 0,9% truyền chậm', price: 6000, bhyt: true },
-  // Kháng sinh
   { code: 'KS01', group: 'Kháng sinh', name: 'Ceftriaxon 1 g lọ bột pha tiêm', route: 'Tiêm tĩnh mạch chậm', defaultDose: '2 g/ngày (1 lần/ngày)', price: 32000, bhyt: true },
   { code: 'KS02', group: 'Kháng sinh', name: 'Cefoperazon + Sulbactam 2 g lọ', route: 'Truyền tĩnh mạch', defaultDose: '2 g mỗi 12 giờ', price: 85000, bhyt: true },
   { code: 'KS03', group: 'Kháng sinh', name: 'Piperacillin + Tazobactam 4,5 g lọ', route: 'Truyền tĩnh mạch 30 phút', defaultDose: '4,5 g mỗi 6–8 giờ', price: 135000, bhyt: true },
@@ -347,7 +384,6 @@ const DRUG_CATALOG = [
   { code: 'KS06', group: 'Kháng sinh', name: 'Levofloxacin 500 mg/100 ml chai truyền', route: 'Truyền tĩnh mạch chậm', defaultDose: '750 mg/ngày (1 lần/ngày)', price: 75000, bhyt: true },
   { code: 'KS07', group: 'Kháng sinh', name: 'Azithromycin 500 mg viên nén', route: 'Uống', defaultDose: '500 mg/ngày (1 lần/ngày)', price: 18000, bhyt: true },
   { code: 'KS08', group: 'Kháng sinh', name: 'Amoxicillin + Acid clavulanic 1 g viên', route: 'Uống', defaultDose: '1 viên x 2 lần/ngày sau ăn', price: 12000, bhyt: true },
-  // Tim mạch & Huyết áp
   { code: 'TM01', group: 'Tim mạch', name: 'Furosemid 20 mg/2 ml ống tiêm', route: 'Tiêm tĩnh mạch', defaultDose: '40 mg tiêm tĩnh mạch mỗi 12 giờ', price: 5000, bhyt: true },
   { code: 'TM02', group: 'Tim mạch', name: 'Furosemid 40 mg viên nén', route: 'Uống', defaultDose: '1 viên uống sáng', price: 2000, bhyt: true },
   { code: 'TM03', group: 'Tim mạch', name: 'Spironolacton 25 mg viên nén', route: 'Uống', defaultDose: '1 viên uống sáng', price: 3500, bhyt: true },
@@ -358,14 +394,12 @@ const DRUG_CATALOG = [
   { code: 'TM08', group: 'Tim mạch', name: 'Aspirin 81 mg viên bao phim', route: 'Uống', defaultDose: '1 viên uống sau ăn sáng', price: 1500, bhyt: true },
   { code: 'TM09', group: 'Tim mạch', name: 'Atorvastatin 20 mg viên nén', route: 'Uống', defaultDose: '1 viên uống tối', price: 6500, bhyt: true },
   { code: 'TM10', group: 'Tim mạch', name: 'Enoxaparin 40 mg/0,4 ml bơm tiêm đóng sẵn', route: 'Tiêm dưới da bụng', defaultDose: '40 mg tiêm dưới da 1 lần/ngày', price: 98000, bhyt: true },
-  // Giảm đau - Hạ sốt - Tiêu hóa - Khác
   { code: 'GD01', group: 'Giảm đau - Hạ sốt', name: 'Paracetamol 1 g/100 ml chai truyền', route: 'Truyền tĩnh mạch 15 phút', defaultDose: '1 g khi sốt >= 38,5°C hoặc đau (tối đa 4 lần/ngày)', price: 34000, bhyt: true },
   { code: 'GD02', group: 'Giảm đau - Hạ sốt', name: 'Paracetamol 500 mg viên nén', route: 'Uống', defaultDose: '1 viên khi sốt/đau (cách nhau >= 6 giờ)', price: 1000, bhyt: true },
   { code: 'GD03', group: 'Giảm đau - Hạ sốt', name: 'Drotaverin 40 mg/2 ml ống tiêm', route: 'Tiêm bắp / Tĩnh mạch chậm', defaultDose: '1 ống khi đau quặn (tối đa 3 ống/ngày)', price: 7500, bhyt: true },
   { code: 'TH01', group: 'Tiêu hóa', name: 'Esomeprazol 40 mg lọ bột pha tiêm', route: 'Tiêm tĩnh mạch chậm', defaultDose: '40 mg/ngày', price: 42000, bhyt: true },
   { code: 'TH02', group: 'Tiêu hóa', name: 'Omeprazol 20 mg viên nang', route: 'Uống', defaultDose: '1 viên trước ăn sáng 30 phút', price: 2500, bhyt: true },
   { code: 'TH03', group: 'Tiêu hóa', name: 'Metoclopramid 10 mg/2 ml ống tiêm', route: 'Tiêm tĩnh mạch chậm', defaultDose: '1 ống khi nôn ói nhiều', price: 5000, bhyt: true },
-  // Nội tiết - Hô hấp - Cấp cứu
   { code: 'NT01', group: 'Nội tiết', name: 'Insulin tác dụng nhanh (Regular) bút/lọ', route: 'Tiêm dưới da', defaultDose: 'Theo phác đồ bậc thang đường huyết mao mạch', price: 65000, bhyt: true },
   { code: 'NT02', group: 'Nội tiết', name: 'Insulin nền Glargine 100 đơn vị/ml', route: 'Tiêm dưới da', defaultDose: '10–14 đơn vị tiêm dưới da lúc 21 giờ', price: 185000, bhyt: true },
   { code: 'HH05', group: 'Hô hấp', name: 'Salbutamol + Ipratropium dung dịch khí dung 2,5 ml', route: 'Khí dung', defaultDose: '1 tép khí dung mỗi 6–8 giờ', price: 18000, bhyt: true },
@@ -379,19 +413,12 @@ const SAMPLE_CASES = [
   {
     id: 'sample_cholangitis',
     isSample: true,
-    updatedAt: '2026-11-25T08:00:00Z',
+    updatedAt: '2026-11-26T08:00:00Z',
     hiddenGroundTruth: 'Viêm đường mật cấp mức độ trung bình (độ II theo Hướng dẫn Tokyo 2018) do sỏi đoạn cuối ống mật chủ gây tắc mật. Cần bù dịch, kháng sinh phủ trực khuẩn Gram âm đường ruột và kỵ khí, giải áp đường mật sớm qua nội soi mật tụy ngược dòng.',
     patient: {
-      code: 'HSBA-261101',
-      name: 'Nguyễn Văn Hùng',
-      age: 64,
-      gender: 'Nam',
-      department: 'Ngoại tổng quát',
-      bed: 'Phòng 302 - Giường 04',
-      admitDate: '25/11/2026',
-      insuranceType: 'BHYT',
-      bhytRate: 80,
-      status: 'Đang điều trị'
+      code: 'HSBA-261101', name: 'Nguyễn Văn Hùng', age: 64, gender: 'Nam',
+      department: 'Ngoại tổng quát', bed: 'Phòng 302 - Giường 04', admitDate: '26/11/2026',
+      insuranceType: 'BHYT', bhytRate: 80, status: 'Đang điều trị'
     },
     record: {
       chiefComplaint: 'Đau bụng hạ sườn phải kèm sốt lạnh run và vàng da ngày thứ 2',
@@ -404,38 +431,25 @@ const SAMPLE_CASES = [
       differentialDx: 'Viêm túi mật cấp, áp xe gan đường mật, viêm tụy cấp do sỏi mật',
       reasoning: ''
     },
-    days: [
-      {
-        dayNumber: 1,
-        date: '25/11/2026',
-        progressNote: 'Ngày 1 nhập viện: Bệnh tỉnh, còn sốt cao 39,1°C, rét run từng cơn, đau tức hạ sườn phải nhiều, vàng da vàng mắt rõ, ăn uống kém.',
-        vitals: { pulse: 112, temp: 39.1, bp: '105/65', rr: 22, spo2: 97 },
-        careLevel: 'Chăm sóc cấp II — Theo dõi sinh hiệu mỗi 4 giờ, theo dõi nước tiểu 24 giờ',
-        diet: 'Nhịn ăn tạm thời chờ đánh giá can thiệp đường mật',
-        labOrders: [],
-        drugOrders: [],
-        attendingFeedback: ''
-      }
-    ],
-    chatHistory: [],
-    evaluation: null
+    days: [{
+      dayNumber: 1, date: '26/11/2026',
+      progressNote: 'Ngày 1 nhập viện: Bệnh tỉnh, còn sốt cao 39,1°C, rét run từng cơn, đau tức hạ sườn phải nhiều, vàng da vàng mắt rõ, ăn uống kém.',
+      vitals: { pulse: 112, temp: 39.1, bp: '105/65', rr: 22, spo2: 97 },
+      careLevel: 'Chăm sóc cấp II — Theo dõi sinh hiệu mỗi 4 giờ, theo dõi nước tiểu 24 giờ',
+      diet: 'Nhịn ăn tạm thời chờ đánh giá can thiệp đường mật',
+      labOrders: [], drugOrders: [], attendingFeedback: ''
+    }],
+    chatHistory: [], evaluation: null
   },
   {
     id: 'sample_hf',
     isSample: true,
-    updatedAt: '2026-11-25T07:30:00Z',
+    updatedAt: '2026-11-26T07:30:00Z',
     hiddenGroundTruth: 'Đợt cấp suy tim mất bù cấp (phân suất tống máu giảm) yếu tố thúc đẩy do bỏ thuốc lợi tiểu và ăn mặn. Cần thở oxy giữ SpO2 >= 94%, lợi tiểu quai đường tĩnh mạch (Furosemid), kiểm soát dịch nhập xuất, điện giải đồ, tối ưu thuốc nền suy tim khi ổn định.',
     patient: {
-      code: 'HSBA-261102',
-      name: 'Trần Thị Mai',
-      age: 71,
-      gender: 'Nữ',
-      department: 'Tim mạch',
-      bed: 'Phòng 205 - Giường 02',
-      admitDate: '25/11/2026',
-      insuranceType: 'BHYT',
-      bhytRate: 95,
-      status: 'Theo dõi sát'
+      code: 'HSBA-261102', name: 'Trần Thị Mai', age: 71, gender: 'Nữ',
+      department: 'Tim mạch', bed: 'Phòng 205 - Giường 02', admitDate: '26/11/2026',
+      insuranceType: 'BHYT', bhytRate: 95, status: 'Theo dõi sát'
     },
     record: {
       chiefComplaint: 'Khó thở tăng dần, phải ngồi dậy để thở và phù hai chân 4 ngày nay',
@@ -448,38 +462,25 @@ const SAMPLE_CASES = [
       differentialDx: 'Viêm phổi cộng đồng, hội chứng vành cấp, thuyên tắc phổi',
       reasoning: ''
     },
-    days: [
-      {
-        dayNumber: 1,
-        date: '25/11/2026',
-        progressNote: 'Ngày 1 nhập viện: Khó thở nhiều tư thế nằm, SpO2 khí trời 90%, ran ẩm hai đáy phổi, phù hai chi dưới ++, tiểu khoảng 400 ml/24h gần nhất.',
-        vitals: { pulse: 108, temp: 36.8, bp: '150/90', rr: 26, spo2: 90 },
-        careLevel: 'Chăm sóc cấp I — Nằm đầu cao 45 độ, theo dõi SpO2 liên tục và bilan dịch xuất nhập',
-        diet: 'Ăn nhạt dưới 2 g muối/ngày, hạn chế nước dưới 1,2 lít/ngày',
-        labOrders: [],
-        drugOrders: [],
-        attendingFeedback: ''
-      }
-    ],
-    chatHistory: [],
-    evaluation: null
+    days: [{
+      dayNumber: 1, date: '26/11/2026',
+      progressNote: 'Ngày 1 nhập viện: Khó thở nhiều tư thế nằm, SpO2 khí trời 90%, ran ẩm hai đáy phổi, phù hai chi dưới ++, tiểu khoảng 400 ml/24h gần nhất.',
+      vitals: { pulse: 108, temp: 36.8, bp: '150/90', rr: 26, spo2: 90 },
+      careLevel: 'Chăm sóc cấp I — Nằm đầu cao 45 độ, theo dõi SpO2 liên tục và bilan dịch xuất nhập',
+      diet: 'Ăn nhạt dưới 2 g muối/ngày, hạn chế nước dưới 1,2 lít/ngày',
+      labOrders: [], drugOrders: [], attendingFeedback: ''
+    }],
+    chatHistory: [], evaluation: null
   },
   {
     id: 'sample_cap',
     isSample: true,
-    updatedAt: '2026-11-25T07:00:00Z',
+    updatedAt: '2026-11-26T07:00:00Z',
     hiddenGroundTruth: 'Viêm phổi cộng đồng mức độ trung bình nhập viện trên nền đái tháo đường típ 2 kiểm soát kém. Cần đánh giá thang điểm nặng, cấy đờm/máu trước kháng sinh, phối hợp kháng sinh phủ vi khuẩn điển hình và không điển hình (Beta-lactam + Macrolide hoặc Fluoroquinolone hô hấp), kiểm soát đường huyết bằng Insulin.',
     patient: {
-      code: 'HSBA-261103',
-      name: 'Lê Minh Tuấn',
-      age: 58,
-      gender: 'Nam',
-      department: 'Hô hấp',
-      bed: 'Phòng 408 - Giường 06',
-      admitDate: '25/11/2026',
-      insuranceType: 'BHYT',
-      bhytRate: 80,
-      status: 'Đang điều trị'
+      code: 'HSBA-261103', name: 'Lê Minh Tuấn', age: 58, gender: 'Nam',
+      department: 'Hô hấp', bed: 'Phòng 408 - Giường 06', admitDate: '26/11/2026',
+      insuranceType: 'BHYT', bhytRate: 80, status: 'Đang điều trị'
     },
     record: {
       chiefComplaint: 'Ho khạc đờm vàng đục, sốt cao và đau tức ngực phải ngày thứ 4',
@@ -492,25 +493,19 @@ const SAMPLE_CASES = [
       differentialDx: 'Lao phổi tiến triển, tràn dịch màng phổi cận viêm, nhồi máu phổi',
       reasoning: ''
     },
-    days: [
-      {
-        dayNumber: 1,
-        date: '25/11/2026',
-        progressNote: 'Ngày 1 nhập viện: Sốt 38,8°C, ho khạc đờm vàng đặc, đau ngực kiểu màng phổi bên phải, đường huyết mao mạch tại cấp cứu 15,8 mmol/L.',
-        vitals: { pulse: 102, temp: 38.8, bp: '130/80', rr: 23, spo2: 93 },
-        careLevel: 'Chăm sóc cấp II — Theo dõi sinh hiệu và đường huyết mao mạch 4 lần/ngày',
-        diet: 'Chế độ ăn bệnh lý đái tháo đường, uống đủ nước',
-        labOrders: [],
-        drugOrders: [],
-        attendingFeedback: ''
-      }
-    ],
-    chatHistory: [],
-    evaluation: null
+    days: [{
+      dayNumber: 1, date: '26/11/2026',
+      progressNote: 'Ngày 1 nhập viện: Sốt 38,8°C, ho khạc đờm vàng đặc, đau ngực kiểu màng phổi bên phải, đường huyết mao mạch tại cấp cứu 15,8 mmol/L.',
+      vitals: { pulse: 102, temp: 38.8, bp: '130/80', rr: 23, spo2: 93 },
+      careLevel: 'Chăm sóc cấp II — Theo dõi sinh hiệu và đường huyết mao mạch 4 lần/ngày',
+      diet: 'Chế độ ăn bệnh lý đái tháo đường, uống đủ nước',
+      labOrders: [], drugOrders: [], attendingFeedback: ''
+    }],
+    chatHistory: [], evaluation: null
   }
 ];
 
-/* ==================== TRẠNG THÁI ỨNG DỤNG ==================== */
+/* ==================== TRẠNG THÁI ỨNG DỤNG & HÀNG ĐỢI GOM LƯU ==================== */
 const state = {
   token: localStorage.getItem('vnemr_token') || '',
   user: JSON.parse(localStorage.getItem('vnemr_user') || 'null'),
@@ -519,8 +514,23 @@ const state = {
   activeTab: 'record',
   activeDayIndex: 0,
   authMode: 'login',
-  busy: false
+  pendingDownvote: null // { type, excerpt, msgIdx }
 };
+
+// Cơ chế gom lưu tự động (debounce 2,5 giây) tránh nghẽn LockService
+const syncQueue = {
+  timer: null,
+  pendingCaseId: null,
+  inFlight: false,
+  dirtyDuringFlight: false
+};
+
+window.addEventListener('beforeunload', (e) => {
+  if (syncQueue.pendingCaseId || syncQueue.inFlight) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
 
 /* ==================== TIỆN ÍCH CƠ BẢN ==================== */
 function esc(str) {
@@ -559,6 +569,7 @@ function setSyncStatus(mode, text) {
   const lbl = document.getElementById('syncText');
   const map = {
     idle: 'bg-emerald-400',
+    pending: 'bg-amber-400',
     syncing: 'bg-sky-400 animate-pulse',
     offline: 'bg-slate-400',
     error: 'bg-red-400'
@@ -585,7 +596,7 @@ async function apiCall(action, payload = {}) {
   const url = getProxyUrl();
   if (!url) {
     openSettingsModal();
-    throw new Error('Chưa cấu hình URL Google Apps Script. Vui lòng dán URL Web App vào cài đặt hoặc trong mã nguồn index.html.');
+    throw new Error('Chưa cấu hình URL Google Apps Script. Vui lòng dán URL Web App vào cài đặt hoặc trong index.html.');
   }
 
   const res = await fetch(url, {
@@ -600,7 +611,7 @@ async function apiCall(action, payload = {}) {
   try {
     data = JSON.parse(text);
   } catch (e) {
-    throw new Error('Máy chủ trả về dữ liệu không phải JSON. Hãy kiểm tra lại quyền triển khai Web App là "Bất kỳ ai (Anyone)".');
+    throw new Error('Máy chủ trả về dữ liệu không phải JSON. Kiểm tra quyền triển khai Web App là "Bất kỳ ai (Anyone)".');
   }
 
   if (!data.ok) {
@@ -613,21 +624,92 @@ async function apiCall(action, payload = {}) {
   return data;
 }
 
-async function callAI(prompt, systemInstruction, jsonMode = false) {
+async function callAI(prompt, systemInstruction, jsonMode = false, taskType = '') {
   if (!state.token) {
     openAuthModal('login');
     throw new Error('Vui lòng đăng nhập tài khoản để sử dụng tính năng AI và lưu tiến trình.');
   }
-  const res = await apiCall('ai', { prompt, systemInstruction, jsonMode, temperature: jsonMode ? 0.35 : 0.5 });
+  const res = await apiCall('ai', {
+    prompt,
+    systemInstruction,
+    jsonMode,
+    taskType,
+    temperature: jsonMode ? 0.3 : 0.45
+  });
   return res.text;
 }
 
-/* ==================== XÁC THỰC & ĐỒNG BỘ HỒ SƠ ==================== */
+/* ==================== ĐỒNG BỘ GOM LƯU TỰ ĐỘNG (DEBOUNCE) ==================== */
+function scheduleSync(caseObj, immediate = false) {
+  if (!state.token || !caseObj || caseObj.isSample) return;
+
+  // Nếu đang chờ lưu một ca KHÁC, đẩy ca đó lên trước
+  if (syncQueue.pendingCaseId && syncQueue.pendingCaseId !== caseObj.id) {
+    flushPendingSync();
+  }
+
+  syncQueue.pendingCaseId = caseObj.id;
+  if (syncQueue.timer) {
+    clearTimeout(syncQueue.timer);
+    syncQueue.timer = null;
+  }
+
+  if (immediate) {
+    flushPendingSync();
+  } else {
+    setSyncStatus('pending', 'Chờ lưu tự động...');
+    syncQueue.timer = setTimeout(() => {
+      syncQueue.timer = null;
+      flushPendingSync();
+    }, 2500);
+  }
+}
+
+async function flushPendingSync() {
+  if (!state.token || !syncQueue.pendingCaseId) return;
+  if (syncQueue.timer) {
+    clearTimeout(syncQueue.timer);
+    syncQueue.timer = null;
+  }
+  if (syncQueue.inFlight) {
+    syncQueue.dirtyDuringFlight = true;
+    return;
+  }
+
+  const targetId = syncQueue.pendingCaseId;
+  const caseObj = state.cases.find(c => c.id === targetId);
+  if (!caseObj || caseObj.isSample) {
+    syncQueue.pendingCaseId = null;
+    return;
+  }
+
+  syncQueue.inFlight = true;
+  syncQueue.pendingCaseId = null;
+  syncQueue.dirtyDuringFlight = false;
+  setSyncStatus('syncing', 'Đang đồng bộ...');
+
+  try {
+    const res = await apiCall('saveCase', { caseData: caseObj });
+    caseObj.updatedAt = res.updatedAt;
+    setSyncStatus('idle', 'Đã lưu đám mây');
+  } catch (err) {
+    setSyncStatus('error', 'Lỗi lưu (bấm thử lại)');
+    syncQueue.pendingCaseId = targetId;
+    showToast('Không thể lưu lên Google Sheets: ' + err.message, 'error');
+  } finally {
+    syncQueue.inFlight = false;
+    if (syncQueue.dirtyDuringFlight || syncQueue.pendingCaseId) {
+      if (!syncQueue.pendingCaseId) syncQueue.pendingCaseId = targetId;
+      flushPendingSync();
+    }
+  }
+}
+
+/* ==================== KHỞI TẠO & QUẢN LÝ HỒ SƠ ==================== */
 async function initApp() {
   const url = getProxyUrl();
   document.getElementById('connDot').className = 'w-2 h-2 rounded-full ' + (url ? 'bg-emerald-400' : 'bg-amber-400');
 
-  // Nạp 3 ca mẫu trước
   state.cases = JSON.parse(JSON.stringify(SAMPLE_CASES));
   renderUserControls();
   renderAll();
@@ -639,7 +721,7 @@ async function initApp() {
       state.user = verify.user;
       localStorage.setItem('vnemr_user', JSON.stringify(state.user));
       await loadCloudCases();
-      setSyncStatus('idle', 'Đã đồng bộ Google Sheets');
+      setSyncStatus('idle', 'Đã lưu đám mây');
     } catch (err) {
       setSyncStatus('offline', 'Chưa đăng nhập');
     }
@@ -665,11 +747,9 @@ function getActiveCase() {
   return state.cases.find(c => c.id === state.activeCaseId) || state.cases[0];
 }
 
-// Nếu đang thao tác trên ca mẫu và đã đăng nhập -> tự động nhân bản thành ca cá nhân
 function ensurePersonalEditableCase() {
   const current = getActiveCase();
-  if (!current.isSample) return current;
-  if (!state.token) return current; // Khách xem thử chỉ sửa tạm trên trình duyệt
+  if (!current.isSample || !state.token) return current;
 
   const cloned = JSON.parse(JSON.stringify(current));
   cloned.id = 'case_' + Date.now();
@@ -678,21 +758,8 @@ function ensurePersonalEditableCase() {
   cloned.updatedAt = new Date().toISOString();
   state.cases.unshift(cloned);
   state.activeCaseId = cloned.id;
-  showToast('Đã tạo bản sao vào hồ sơ cá nhân của bạn để lưu tiến trình.', 'info');
+  showToast('Đã tạo bản sao vào hồ sơ cá nhân để lưu tiến trình.', 'info');
   return cloned;
-}
-
-async function syncCaseToCloud(caseObj) {
-  if (!state.token || caseObj.isSample) return;
-  setSyncStatus('syncing', 'Đang lưu...');
-  try {
-    const res = await apiCall('saveCase', { caseData: caseObj });
-    caseObj.updatedAt = res.updatedAt;
-    setSyncStatus('idle', 'Đã lưu đám mây');
-  } catch (err) {
-    setSyncStatus('error', 'Lỗi đồng bộ');
-    showToast('Không thể lưu lên Google Sheets: ' + err.message, 'error');
-  }
 }
 
 async function deleteCase(caseId, ev) {
@@ -702,11 +769,12 @@ async function deleteCase(caseId, ev) {
     setSyncStatus('syncing', 'Đang xóa...');
     await apiCall('deleteCase', { caseId });
     state.cases = state.cases.filter(c => c.id !== caseId);
+    if (syncQueue.pendingCaseId === caseId) syncQueue.pendingCaseId = null;
     if (state.activeCaseId === caseId) {
       state.activeCaseId = state.cases[0].id;
       state.activeDayIndex = 0;
     }
-    setSyncStatus('idle', 'Đã đồng bộ Google Sheets');
+    setSyncStatus('idle', 'Đã lưu đám mây');
     showToast('Đã xóa ca bệnh.', 'success');
     renderAll();
   } catch (err) {
@@ -715,7 +783,7 @@ async function deleteCase(caseId, ev) {
   }
 }
 
-/* ==================== GIAO DIỆN ĐĂNG NHẬP / ĐĂNG KÝ ==================== */
+/* ==================== ĐĂNG NHẬP / ĐĂNG KÝ ==================== */
 function renderUserControls() {
   const box = document.getElementById('userControls');
   if (state.token && state.user) {
@@ -772,10 +840,10 @@ async function submitAuth(e) {
     localStorage.setItem('vnemr_user', JSON.stringify(res.user));
 
     closeAuthModal();
-    showToast(`Chào mừng ${res.user.displayName}! Đang tải danh sách ca bệnh của bạn...`, 'success');
+    showToast(`Chào mừng ${res.user.displayName}! Đang tải danh sách ca bệnh...`, 'success');
     setSyncStatus('syncing', 'Đang tải hồ sơ...');
     await loadCloudCases();
-    setSyncStatus('idle', 'Đã đồng bộ Google Sheets');
+    setSyncStatus('idle', 'Đã lưu đám mây');
     renderUserControls();
     renderAll();
   } catch (err) {
@@ -787,7 +855,10 @@ async function submitAuth(e) {
   }
 }
 
-function logoutUser(silent) {
+async function logoutUser(silent) {
+  if (!silent && syncQueue.pendingCaseId) {
+    await flushPendingSync();
+  }
   state.token = '';
   state.user = null;
   localStorage.removeItem('vnemr_token');
@@ -801,7 +872,7 @@ function logoutUser(silent) {
   if (!silent) showToast('Đã đăng xuất khỏi tài khoản.', 'info');
 }
 
-/* ==================== CÀI ĐẶT MÁY CHỦ ==================== */
+/* ==================== CÀI ĐẶT MÁY CHỦ & LÀM MỚI AI_CONFIG ==================== */
 function openSettingsModal() {
   document.getElementById('settingsProxyUrl').value = getProxyUrl();
   document.getElementById('settingsTestResult').classList.add('hidden');
@@ -823,7 +894,7 @@ function saveSettings() {
   showToast('Đã lưu URL máy chủ Google Apps Script.', 'success');
 }
 
-async function testBackendConnection() {
+async function testBackendConnection(refreshConfig = false) {
   const url = document.getElementById('settingsProxyUrl').value.trim();
   const box = document.getElementById('settingsTestResult');
   box.classList.remove('hidden');
@@ -833,19 +904,144 @@ async function testBackendConnection() {
     return;
   }
   box.className = 'text-xs p-2.5 rounded-lg border bg-slate-50 text-slate-600 border-slate-200';
-  box.textContent = 'Đang kiểm tra kết nối...';
+  box.textContent = refreshConfig ? 'Đang nạp lại bảng AI_Config từ Google Sheets...' : 'Đang kiểm tra kết nối...';
   try {
-    const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+    const target = refreshConfig ? (url + (url.includes('?') ? '&' : '?') + 'refresh=1') : url;
+    const res = await fetch(target, { method: 'GET', redirect: 'follow' });
     const data = await res.json();
     if (data.status === 'ok') {
       box.className = 'text-xs p-2.5 rounded-lg border bg-emerald-50 text-emerald-800 border-emerald-200';
-      box.innerHTML = `<b>Kết nối thành công!</b><br>Model: ${esc(data.model)} • API Key: ${data.apiKeyConfigured ? 'Đã cấu hình' : 'CHƯA CẤU HÌNH'} • Google Sheet: ${data.spreadsheetConnected ? 'Đã kết nối' : 'CHƯA KẾT NỐI'}`;
+      box.innerHTML = `<b>Kết nối thành công!</b><br>Model: ${esc(data.model)} • API Key: ${data.apiKeyConfigured ? 'OK' : 'CHƯA CẤU HÌNH'} • Sheet: ${data.spreadsheetConnected ? 'OK' : 'LỖI'}<br>AI_Config đang áp dụng: ${(data.aiConfigKeys || []).length} mục ${data.cacheCleared ? '(Đã làm mới ngay!)' : ''}`;
     } else {
       throw new Error(data.error || 'Phản hồi không hợp lệ.');
     }
   } catch (err) {
     box.className = 'text-xs p-2.5 rounded-lg border bg-red-50 text-red-700 border-red-200';
     box.textContent = 'Lỗi kết nối: ' + err.message;
+  }
+}
+
+/* ==================== HỆ THỐNG GÓP Ý 2 TẦNG ==================== */
+function openFeedbackModal() {
+  if (!state.token) {
+    showToast('Vui lòng đăng nhập để gửi góp ý.', 'warning');
+    openAuthModal('login');
+    return;
+  }
+  document.getElementById('feedbackModal').classList.remove('hidden');
+  document.getElementById('feedbackModal').classList.add('flex');
+}
+
+function closeFeedbackModal() {
+  document.getElementById('feedbackModal').classList.add('hidden');
+  document.getElementById('feedbackModal').classList.remove('flex');
+}
+
+async function submitGeneralFeedback(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btnSendFb');
+  btn.disabled = true;
+  btn.textContent = 'Đang gửi...';
+  try {
+    await apiCall('submitFeedback', {
+      type: 'web_general',
+      rating: Number(document.getElementById('fbRating').value),
+      tags: [document.getElementById('fbCategory').value],
+      comment: document.getElementById('fbComment').value.trim(),
+      caseId: state.activeCaseId
+    });
+    document.getElementById('fbComment').value = '';
+    closeFeedbackModal();
+    showToast('Cảm ơn bạn đã góp ý! Hệ thống đã ghi nhận vào bảng Feedback.', 'success');
+  } catch (err) {
+    showToast('Lỗi gửi góp ý: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Gửi góp ý';
+  }
+}
+
+async function rateAiOutput(type, score, excerpt, msgIdx = null) {
+  if (!state.token) {
+    showToast('Vui lòng đăng nhập để đánh giá câu trả lời AI.', 'warning');
+    openAuthModal('login');
+    return;
+  }
+  if (score < 0) {
+    state.pendingDownvote = { type, excerpt, msgIdx };
+    document.querySelectorAll('input[name="aiTag"]').forEach(cb => cb.checked = false);
+    document.getElementById('aiDownvoteComment').value = '';
+    document.getElementById('aiDownvoteModal').classList.remove('hidden');
+    document.getElementById('aiDownvoteModal').classList.add('flex');
+    return;
+  }
+
+  try {
+    await apiCall('submitFeedback', {
+      type,
+      rating: 1,
+      tags: ['Hữu ích'],
+      comment: 'Đánh giá tích cực',
+      caseId: state.activeCaseId,
+      aiExcerpt: excerpt
+    });
+    markRatedLocally(type, msgIdx, 1);
+    showToast('Cảm ơn đánh giá của bạn!', 'success');
+  } catch (err) {
+    showToast('Không thể lưu đánh giá: ' + err.message, 'error');
+  }
+}
+
+function closeDownvoteModal() {
+  document.getElementById('aiDownvoteModal').classList.add('hidden');
+  document.getElementById('aiDownvoteModal').classList.remove('flex');
+  state.pendingDownvote = null;
+}
+
+async function submitDownvoteFeedback(e) {
+  e.preventDefault();
+  if (!state.pendingDownvote) return;
+  const tags = Array.from(document.querySelectorAll('input[name="aiTag"]:checked')).map(cb => cb.value);
+  const comment = document.getElementById('aiDownvoteComment').value.trim();
+  if (!tags.length && !comment) {
+    showToast('Vui lòng chọn ít nhất một lý do hoặc nhập nhận xét.', 'warning');
+    return;
+  }
+
+  const btn = document.getElementById('btnSendDownvote');
+  btn.disabled = true;
+  btn.textContent = 'Đang gửi...';
+  try {
+    await apiCall('submitFeedback', {
+      type: state.pendingDownvote.type,
+      rating: -1,
+      tags: tags.length ? tags : ['Cần cải thiện'],
+      comment,
+      caseId: state.activeCaseId,
+      aiExcerpt: state.pendingDownvote.excerpt
+    });
+    markRatedLocally(state.pendingDownvote.type, state.pendingDownvote.msgIdx, -1);
+    closeDownvoteModal();
+    showToast('Đã ghi nhận góp ý để tinh chỉnh AI.', 'success');
+  } catch (err) {
+    showToast('Lỗi gửi báo cáo: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Gửi báo cáo';
+  }
+}
+
+function markRatedLocally(type, msgIdx, score) {
+  const c = getActiveCase();
+  if (type === 'ai_reply' && msgIdx != null && c.chatHistory[msgIdx]) {
+    c.chatHistory[msgIdx].rated = score;
+    renderChatHistory();
+  } else if (type === 'ai_record') {
+    c.record.aiFeedbackRated = score;
+    renderRecordTab();
+  } else if (type === 'ai_eval') {
+    c.evaluationRated = score;
+    renderTreatmentTab();
   }
 }
 
@@ -876,16 +1072,15 @@ async function generateAICase(e) {
   btn.textContent = 'AI đang khởi tạo hồ sơ...';
 
   const today = new Date().toLocaleDateString('vi-VN');
-  const sys = `Bạn là bác sĩ giảng viên lâm sàng tại bệnh viện đa khoa tuyến cuối ở Việt Nam. Hãy tạo một ca bệnh lâm sàng thực tế, hoàn toàn bằng tiếng Việt chuẩn y khoa (hạn chế tối đa từ tiếng Anh không cần thiết). Trả về DUY NHẤT một đối tượng JSON theo đúng cấu trúc yêu cầu.`;
   const prompt = `Tạo một ca bệnh nhập viện mới:
 - Chuyên khoa: ${dept}
 - Độ khó: ${diff}
 - Chủ đề mong muốn: ${topic || 'Tự chọn bệnh lý thường gặp và giàu giá trị thực hành lâm sàng'}
 - Ngày nhập viện: ${today}
 
-Trả về JSON đúng cấu trúc sau:
+Trả về DUY NHẤT một đối tượng JSON theo đúng cấu trúc sau:
 {
-  "hiddenGroundTruth": "Chẩn đoán xác định đầy đủ, phân độ và hướng xử trí chuẩn theo hướng dẫn Bộ Y tế / quốc tế",
+  "hiddenGroundTruth": "Chẩn đoán xác định đầy đủ, phân độ và hướng xử trí chuẩn",
   "patient": {
     "name": "Họ tên bệnh nhân người Việt",
     "age": 55,
@@ -902,8 +1097,8 @@ Trả về JSON đúng cấu trúc sau:
     "hpi": "Bệnh sử chi tiết, logic theo dòng thời gian",
     "pmh": "Tiền sử bản thân, gia đình, dị ứng, thuốc đang dùng",
     "exam": "Khám thực thể toàn thân và các cơ quan rõ ràng",
-    "summary": "Tóm tắt bệnh án ngắn gọn để sinh viên tự biện luận thêm",
-    "preliminaryDx": "Chẩn đoán sơ bộ ban đầu tại phòng cấp cứu (không tiết lộ hết chẩn đoán xác định nếu ca khó)",
+    "summary": "Tóm tắt bệnh án ngắn gọn",
+    "preliminaryDx": "Chẩn đoán sơ bộ ban đầu tại cấp cứu",
     "icd10": "Mã ICD-10 tương ứng",
     "differentialDx": "2-3 chẩn đoán phân biệt hợp lý"
   },
@@ -916,7 +1111,7 @@ Trả về JSON đúng cấu trúc sau:
 }`;
 
   try {
-    const raw = await callAI(prompt, sys, true);
+    const raw = await callAI(prompt, 'Chỉ trả về JSON hợp lệ, không thêm văn bản ngoài JSON.', true, 'generate_case');
     const data = extractJSON(raw);
 
     const newCase = {
@@ -947,19 +1142,17 @@ Trả về JSON đúng cấu trúc sau:
         differentialDx: data.record?.differentialDx || '',
         reasoning: ''
       },
-      days: [
-        {
-          dayNumber: 1,
-          date: today,
-          progressNote: data.day1?.progressNote || '',
-          vitals: data.day1?.vitals || { pulse: 85, temp: 37, bp: '120/75', rr: 18, spo2: 98 },
-          careLevel: data.day1?.careLevel || 'Chăm sóc cấp II',
-          diet: data.day1?.diet || 'Cơm thường',
-          labOrders: [],
-          drugOrders: [],
-          attendingFeedback: ''
-        }
-      ],
+      days: [{
+        dayNumber: 1,
+        date: today,
+        progressNote: data.day1?.progressNote || '',
+        vitals: data.day1?.vitals || { pulse: 85, temp: 37, bp: '120/75', rr: 18, spo2: 98 },
+        careLevel: data.day1?.careLevel || 'Chăm sóc cấp II',
+        diet: data.day1?.diet || 'Cơm thường',
+        labOrders: [],
+        drugOrders: [],
+        attendingFeedback: ''
+      }],
       chatHistory: [],
       evaluation: null
     };
@@ -972,8 +1165,8 @@ Trả về JSON đúng cấu trúc sau:
     closeNewCaseModal();
     document.getElementById('newCaseTopic').value = '';
     renderAll();
-    await syncCaseToCloud(newCase);
-    showToast('Đã tiếp nhận bệnh nhân mới và lưu vào tài khoản của bạn.', 'success');
+    scheduleSync(newCase, true);
+    showToast('Đã tiếp nhận bệnh nhân mới và lưu vào tài khoản.', 'success');
   } catch (err) {
     showToast('Lỗi tạo ca bệnh: ' + err.message, 'error');
   } finally {
@@ -1038,6 +1231,9 @@ function renderPatientList() {
 }
 
 function selectCase(id) {
+  if (syncQueue.pendingCaseId && syncQueue.pendingCaseId !== id) {
+    flushPendingSync();
+  }
   state.activeCaseId = id;
   const c = getActiveCase();
   state.activeDayIndex = c.days.length - 1;
@@ -1135,10 +1331,10 @@ function renderRecordTab() {
   document.getElementById('mainContent').innerHTML = `
     <div class="max-w-5xl mx-auto space-y-4">
       <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-        <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
           <h3 class="font-bold text-sm text-slate-900">Hồ sơ bệnh án nội trú (Mẫu chuẩn Bộ Y tế)</h3>
           <div class="flex gap-2">
-            <button onclick="saveRecordForm()" class="px-3 py-1.5 text-xs rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-semibold">Lưu bệnh án</button>
+            <button onclick="saveRecordForm(true)" class="px-3 py-1.5 text-xs rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-semibold">Lưu bệnh án</button>
             <button onclick="reviewRecordAI()" class="px-3 py-1.5 text-xs rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold">AI nhận xét biện luận</button>
           </div>
         </div>
@@ -1182,13 +1378,25 @@ function renderRecordTab() {
               class="w-full px-3 py-2 text-sm border border-sky-300 bg-sky-50/30 rounded-lg">${esc(r.reasoning || '')}</textarea>
           </div>
         </div>
-        <div id="aiRecordFeedback" class="${r.aiFeedback ? '' : 'hidden'} mt-4 p-3.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs leading-relaxed whitespace-pre-wrap text-indigo-950">${esc(r.aiFeedback || '')}</div>
+
+        ${r.aiFeedback ? `
+          <div id="aiRecordFeedback" class="mt-4 p-3.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs leading-relaxed text-indigo-950">
+            <div class="whitespace-pre-wrap">${esc(r.aiFeedback)}</div>
+            <div class="mt-2.5 pt-2 border-t border-indigo-200/70 flex items-center gap-3 text-[11px] text-indigo-800">
+              <span>Nhận xét này có hữu ích không?</span>
+              ${r.aiFeedbackRated ? `<span class="font-semibold">${r.aiFeedbackRated > 0 ? '👍 Đã đánh giá hữu ích' : '👎 Đã gửi góp ý'}</span>` : `
+                <button onclick="rateAiOutput('ai_record', 1, getActiveCase().record.aiFeedback)" class="hover:underline font-medium">👍 Hữu ích</button>
+                <button onclick="rateAiOutput('ai_record', -1, getActiveCase().record.aiFeedback)" class="hover:underline text-rose-700 font-medium">👎 Chưa ổn</button>
+              `}
+            </div>
+          </div>
+        ` : `<div id="aiRecordFeedback" class="hidden mt-4 p-3.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs leading-relaxed whitespace-pre-wrap text-indigo-950"></div>`}
       </div>
     </div>
   `;
 }
 
-async function saveRecordForm() {
+function saveRecordForm(immediate = true) {
   const c = ensurePersonalEditableCase();
   c.record.chiefComplaint = document.getElementById('recChief').value;
   c.record.hpi = document.getElementById('recHpi').value;
@@ -1202,12 +1410,12 @@ async function saveRecordForm() {
 
   renderPatientList();
   renderPatientBanner();
-  await syncCaseToCloud(c);
-  showToast('Đã lưu nội dung bệnh án.', 'success');
+  scheduleSync(c, immediate);
+  if (immediate) showToast('Đã lưu nội dung bệnh án.', 'success');
 }
 
 async function reviewRecordAI() {
-  await saveRecordForm();
+  saveRecordForm(false);
   const c = getActiveCase();
   const box = document.getElementById('aiRecordFeedback');
   box.classList.remove('hidden');
@@ -1218,15 +1426,14 @@ async function reviewRecordAI() {
 - Tóm tắt bệnh án: ${c.record.summary}
 - Chẩn đoán sơ bộ: ${c.record.preliminaryDx} (ICD-10: ${c.record.icd10})
 - Chẩn đoán phân biệt: ${c.record.differentialDx}
-- Biện luận của học viên: ${c.record.reasoning || '(Chưa viết phần biện luận)'}
-
-Hãy nhận xét ngắn gọn theo 3 mục: (1) Điểm làm tốt, (2) Điểm còn thiếu hoặc chưa chặt chẽ, (3) Gợi ý hướng suy luận tiếp theo.`;
+- Biện luận của học viên: ${c.record.reasoning || '(Chưa viết phần biện luận)'}`;
 
   try {
-    const reply = await callAI(prompt, 'Bạn là bác sĩ giảng viên lâm sàng Việt Nam, nhận xét chuẩn xác, súc tích, mang tính sư phạm.', false);
+    const reply = await callAI(prompt, '', false, 'review_record');
     c.record.aiFeedback = reply;
-    box.textContent = reply;
-    await syncCaseToCloud(c);
+    c.record.aiFeedbackRated = 0;
+    renderRecordTab();
+    scheduleSync(c, true);
   } catch (err) {
     box.textContent = 'Lỗi: ' + err.message;
   }
@@ -1240,7 +1447,6 @@ function renderClsTab() {
 
   document.getElementById('mainContent').innerHTML = `
     <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4">
-      <!-- CỘT CHỌN DANH MỤC CLS -->
       <div class="lg:col-span-5 bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col max-h-[75vh]">
         <h3 class="font-bold text-sm mb-2">Danh mục Cận lâm sàng</h3>
         <div class="flex gap-2 mb-2">
@@ -1263,12 +1469,11 @@ function renderClsTab() {
         </div>
       </div>
 
-      <!-- CỘT PHIẾU CHỈ ĐỊNH & KẾT QUẢ NGÀY ĐANG CHỌN -->
       <div class="lg:col-span-7 bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col">
         <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
           <div>
             <h3 class="font-bold text-sm">Phiếu chỉ định & Kết quả — Ngày ${day.dayNumber}</h3>
-            <p class="text-[11px] text-slate-500">Tổng số chỉ định: ${day.labOrders.length} (${pendingCount} chờ kết quả)</p>
+            <p class="text-[11px] text-slate-500">Gom đủ chỉ định rồi bấm trả kết quả 1 lần để tiết kiệm hạn mức AI (${pendingCount} chờ KQ)</p>
           </div>
           <button id="btnRunLabs" onclick="runLabResultsAI()" class="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow disabled:opacity-50" ${pendingCount === 0 ? 'disabled' : ''}>
             Trả kết quả CLS bằng AI (${pendingCount})
@@ -1318,7 +1523,7 @@ function filterClsCatalog() {
   `).join('');
 }
 
-async function addLabOrder(code) {
+function addLabOrder(code) {
   const item = CLS_CATALOG.find(i => i.code === code);
   if (!item) return;
   const c = ensurePersonalEditableCase();
@@ -1326,23 +1531,17 @@ async function addLabOrder(code) {
   const selectedPay = document.getElementById('clsPayDefault').value;
   const payType = (!item.bhyt && selectedPay === 'BHYT') ? 'Thu phí' : selectedPay;
   if (!item.bhyt && selectedPay === 'BHYT') {
-    showToast('Kỹ thuật này ngoài danh mục BHYT, hệ thống tự chuyển sang diện Thu phí.', 'warning');
+    showToast('Kỹ thuật này ngoài danh mục BHYT, tự chuyển sang diện Thu phí.', 'warning');
   }
   day.labOrders.push({
-    code: item.code,
-    name: item.name,
-    group: item.group,
-    price: item.price,
-    payType,
-    status: 'Chờ kết quả',
-    result: '',
-    abnormal: false
+    code: item.code, name: item.name, group: item.group,
+    price: item.price, payType, status: 'Chờ kết quả', result: '', abnormal: false
   });
   renderClsTab();
-  await syncCaseToCloud(c);
+  scheduleSync(c, false); // Gom lưu tự động sau 2,5 giây
 }
 
-async function addCustomCls() {
+function addCustomCls() {
   const input = document.getElementById('customClsName');
   const name = input.value.trim();
   if (!name) return;
@@ -1350,25 +1549,19 @@ async function addCustomCls() {
   const day = c.days[state.activeDayIndex];
   const payType = document.getElementById('clsPayDefault').value;
   day.labOrders.push({
-    code: 'TC' + String(Date.now()).slice(-3),
-    name,
-    group: 'Bổ sung',
-    price: 150000,
-    payType,
-    status: 'Chờ kết quả',
-    result: '',
-    abnormal: false
+    code: 'TC' + String(Date.now()).slice(-3), name, group: 'Bổ sung',
+    price: 150000, payType, status: 'Chờ kết quả', result: '', abnormal: false
   });
   input.value = '';
   renderClsTab();
-  await syncCaseToCloud(c);
+  scheduleSync(c, false);
 }
 
-async function removeLabOrder(idx) {
+function removeLabOrder(idx) {
   const c = ensurePersonalEditableCase();
   c.days[state.activeDayIndex].labOrders.splice(idx, 1);
   renderClsTab();
-  await syncCaseToCloud(c);
+  scheduleSync(c, false);
 }
 
 async function runLabResultsAI() {
@@ -1387,8 +1580,8 @@ async function runLabResultsAI() {
     `Ngày ${d.dayNumber}: ${d.progressNote} | Sinh hiệu: M ${d.vitals.pulse}, T ${d.vitals.temp}, HA ${d.vitals.bp}, SpO2 ${d.vitals.spo2}% | Thuốc: ${d.drugOrders.map(x => x.name).join(', ') || 'Chưa có'}`
   ).join('\n');
 
-  const prompt = `Bạn là hệ thống xét nghiệm và chẩn đoán hình ảnh bệnh viện. Hãy trả kết quả thực tế, nhất quán với bệnh cảnh của bệnh nhân cho các chỉ định dưới đây:
-- Bệnh nền & đáp án bệnh lý gốc: ${c.hiddenGroundTruth}
+  const prompt = `Trả kết quả cận lâm sàng thực tế, nhất quán với bệnh cảnh của bệnh nhân:
+- Bệnh nền & đáp án gốc: ${c.hiddenGroundTruth}
 - Thông tin bệnh nhân: ${c.patient.name}, ${c.patient.age} tuổi, ${c.patient.gender}
 - Diễn tiến đến ngày ${day.dayNumber}:
 ${priorContext}
@@ -1398,15 +1591,11 @@ ${pending.map(p => `- idx ${p.idx}: ${p.name}`).join('\n')}
 
 Trả về JSON dạng mảng:
 [
-  {
-    "idx": 0,
-    "result": "Kết quả định lượng kèm đơn vị chuẩn và khoảng tham chiếu bình thường, hoặc mô tả chi tiết hình ảnh siêu âm/X-quang/cắt lớp",
-    "abnormal": true
-  }
+  { "idx": 0, "result": "Kết quả kèm đơn vị và khoảng tham chiếu hoặc mô tả hình ảnh", "abnormal": true }
 ]`;
 
   try {
-    const raw = await callAI(prompt, 'Trả về JSON mảng chuẩn xác bằng tiếng Việt y khoa, có giá trị số cụ thể và đơn vị đo chuẩn Việt Nam.', true);
+    const raw = await callAI(prompt, 'Chỉ trả về JSON mảng hợp lệ.', true, 'lab_results');
     const results = extractJSON(raw);
     results.forEach(r => {
       if (day.labOrders[r.idx]) {
@@ -1416,7 +1605,7 @@ Trả về JSON dạng mảng:
       }
     });
     renderClsTab();
-    await syncCaseToCloud(c);
+    scheduleSync(c, true);
     showToast('Đã trả đầy đủ kết quả cận lâm sàng!', 'success');
   } catch (err) {
     showToast('Lỗi trả kết quả CLS: ' + err.message, 'error');
@@ -1432,7 +1621,6 @@ function renderTreatmentTab() {
 
   document.getElementById('mainContent').innerHTML = `
     <div class="max-w-6xl mx-auto space-y-4">
-      <!-- BẢNG TỜ ĐIỀU TRỊ 2 CỘT CHUẨN BỆNH VIỆN -->
       <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between flex-wrap gap-2">
           <div>
@@ -1446,18 +1634,17 @@ function renderTreatmentTab() {
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
-          <!-- CỘT 1: DIỄN BIẾN BỆNH -->
           <div class="lg:col-span-5 p-4 space-y-3 bg-slate-50/40">
             <div class="text-xs font-bold uppercase text-slate-500">Cột 1: Diễn biến bệnh</div>
             <div class="p-3 bg-white border border-slate-200 rounded-lg text-xs leading-relaxed whitespace-pre-wrap">${esc(day.progressNote)}</div>
 
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Chế độ chăm sóc</label>
-              <input id="txCare" onchange="updateDayMeta()" type="text" value="${esc(day.careLevel)}" class="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg bg-white" />
+              <input id="txCare" oninput="updateDayMeta()" type="text" value="${esc(day.careLevel)}" class="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg bg-white" />
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Chế độ dinh dưỡng</label>
-              <input id="txDiet" onchange="updateDayMeta()" type="text" value="${esc(day.diet)}" class="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg bg-white" />
+              <input id="txDiet" oninput="updateDayMeta()" type="text" value="${esc(day.diet)}" class="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg bg-white" />
             </div>
 
             ${day.attendingFeedback ? `
@@ -1468,11 +1655,9 @@ function renderTreatmentTab() {
             ` : ''}
           </div>
 
-          <!-- CỘT 2: Y LỆNH THUỐC & DỊCH TRUYỀN -->
           <div class="lg:col-span-7 p-4 space-y-3">
             <div class="text-xs font-bold uppercase text-slate-500">Cột 2: Y lệnh điều trị (${day.drugOrders.length} mục)</div>
 
-            <!-- DANH SÁCH Y LỆNH HIỆN TẠI -->
             <div class="space-y-2">
               ${day.drugOrders.length === 0
                 ? `<div class="text-xs text-slate-400 text-center py-6 border border-dashed border-slate-300 rounded-xl">Chưa kê thuốc hoặc dịch truyền cho ngày ${day.dayNumber}.</div>`
@@ -1491,7 +1676,6 @@ function renderTreatmentTab() {
                 `).join('')}
             </div>
 
-            <!-- BỘ CHỌN THUỐC TỪ DANH MỤC BỘ Y TẾ -->
             <div class="pt-3 border-t border-slate-200 space-y-2">
               <div class="text-xs font-semibold text-slate-700">Kê thêm thuốc / dịch truyền theo danh mục Bộ Y tế:</div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -1522,6 +1706,13 @@ function renderTreatmentTab() {
         <div class="bg-white rounded-xl border-2 border-amber-300 p-4 shadow-sm">
           <h4 class="font-bold text-sm text-amber-900 mb-2">KẾT QUẢ TỔNG KẾT & CHẤM ĐIỂM LÂM SÀNG (AI)</h4>
           <div class="text-xs leading-relaxed whitespace-pre-wrap text-slate-800">${esc(c.evaluation)}</div>
+          <div class="mt-3 pt-2 border-t border-amber-200 flex items-center gap-3 text-[11px] text-amber-900">
+            <span>Đánh giá phần chấm điểm này:</span>
+            ${c.evaluationRated ? `<span class="font-semibold">${c.evaluationRated > 0 ? '👍 Hữu ích' : '👎 Đã gửi góp ý'}</span>` : `
+              <button onclick="rateAiOutput('ai_eval', 1, getActiveCase().evaluation)" class="hover:underline font-medium">👍 Hữu ích</button>
+              <button onclick="rateAiOutput('ai_eval', -1, getActiveCase().evaluation)" class="hover:underline text-rose-700 font-medium">👎 Chưa ổn</button>
+            `}
+          </div>
         </div>
       ` : ''}
     </div>
@@ -1538,7 +1729,7 @@ function prefillDrug() {
   document.getElementById('drugPay').value = item.bhyt ? 'BHYT' : 'Thu phí';
 }
 
-async function addDrugOrder() {
+function addDrugOrder() {
   const code = document.getElementById('drugSelect').value;
   const item = DRUG_CATALOG.find(d => d.code === code);
   const name = document.getElementById('drugCustomName').value.trim() || (item ? item.name : '');
@@ -1557,22 +1748,22 @@ async function addDrugOrder() {
     payType: document.getElementById('drugPay').value
   });
   renderTreatmentTab();
-  await syncCaseToCloud(c);
+  scheduleSync(c, false); // Gom lưu tự động sau 2,5 giây
 }
 
-async function removeDrugOrder(idx) {
+function removeDrugOrder(idx) {
   const c = ensurePersonalEditableCase();
   c.days[state.activeDayIndex].drugOrders.splice(idx, 1);
   renderTreatmentTab();
-  await syncCaseToCloud(c);
+  scheduleSync(c, false);
 }
 
-async function updateDayMeta() {
+function updateDayMeta() {
   const c = ensurePersonalEditableCase();
   const day = c.days[state.activeDayIndex];
   day.careLevel = document.getElementById('txCare').value;
   day.diet = document.getElementById('txDiet').value;
-  await syncCaseToCloud(c);
+  scheduleSync(c, false);
 }
 
 async function advanceNextDayAI() {
@@ -1594,19 +1785,15 @@ async function advanceNextDayAI() {
   + Dinh dưỡng: ${currentDay.diet}
   + Thuốc & dịch truyền: ${currentDay.drugOrders.map(d => `${d.name} (${d.route}, ${d.dose}, SL ${d.qty})`).join('; ') || 'KHÔNG CHO THUỐC NÀO'}
 
-Quy tắc mô phỏng:
-- Nếu y lệnh trúng đích, đúng liều và đủ hỗ trợ -> bệnh nhân cải thiện rõ rệt, sinh hiệu ổn định dần.
-- Nếu thiếu thuốc thiết yếu, sai nhóm kháng sinh hoặc dùng thuốc chống chỉ định -> bệnh tiến triển nặng hơn hoặc xuất hiện biến chứng hợp lý về mặt sinh lý bệnh.
-
 Trả về JSON duy nhất:
 {
   "progressNote": "Mô tả chi tiết triệu chứng cơ năng, thực thể và ghi nhận điều dưỡng sáng ngày ${currentDay.dayNumber + 1}",
   "vitals": { "pulse": 88, "temp": 37.5, "bp": "120/75", "rr": 18, "spo2": 97 },
-  "attendingFeedback": "Nhận xét chuyên môn của Bác sĩ Trưởng khoa về y lệnh ngày ${currentDay.dayNumber} (điểm đúng, điểm thiếu hoặc nguy cơ sai sót)"
+  "attendingFeedback": "Nhận xét chuyên môn của Bác sĩ Trưởng khoa về y lệnh ngày ${currentDay.dayNumber}"
 }`;
 
   try {
-    const raw = await callAI(prompt, 'Bạn là hệ thống mô phỏng sinh lý bệnh lâm sàng chuẩn xác bằng tiếng Việt. Chỉ trả về JSON hợp lệ.', true);
+    const raw = await callAI(prompt, 'Chỉ trả về JSON hợp lệ.', true, 'next_day');
     const sim = extractJSON(raw);
 
     const nextDate = new Date();
@@ -1626,7 +1813,7 @@ Trả về JSON duy nhất:
     c.days.push(nextDay);
     state.activeDayIndex = c.days.length - 1;
     renderAll();
-    await syncCaseToCloud(c);
+    scheduleSync(c, true);
     showToast(`Đã chuyển sang Ngày điều trị ${nextDay.dayNumber}!`, 'success');
   } catch (err) {
     showToast('Lỗi mô phỏng diễn tiến: ' + err.message, 'error');
@@ -1644,26 +1831,19 @@ async function evaluateCaseAI() {
     `Ngày ${d.dayNumber}: CLS [${d.labOrders.map(l => `${l.name} (${l.payType})`).join(', ')}] | Thuốc [${d.drugOrders.map(x => `${x.name} - ${x.dose}`).join(', ')}]`
   ).join('\n');
 
-  const prompt = `Tổng kết và chấm điểm toàn bộ quá trình xử trí ca bệnh của học viên theo 4 tiêu chí (thang điểm 10 cho mỗi tiêu chí và điểm tổng kết):
-1. Làm hồ sơ bệnh án & biện luận chẩn đoán
-2. Chỉ định cận lâm sàng hợp lý & tối ưu chi phí BHYT
-3. Phác đồ điều trị, liều lượng và chăm sóc
-4. Theo dõi và xử trí diễn tiến qua các ngày
-
-Dữ liệu ca bệnh:
+  const prompt = `Tổng kết và chấm điểm toàn bộ quá trình xử trí ca bệnh:
 - Đáp án chuẩn: ${c.hiddenGroundTruth}
 - Chẩn đoán sơ bộ học viên: ${c.record.preliminaryDx} (${c.record.icd10})
 - Biện luận: ${c.record.reasoning || '(Trống)'}
 - Lịch sử chỉ định và điều trị:
-${summaryDays}
-
-Viết nhận xét rõ ràng, cụ thể và chỉ ra bài học lâm sàng rút ra.`;
+${summaryDays}`;
 
   try {
-    const reply = await callAI(prompt, 'Bạn là Trưởng khoa chấm thi lâm sàng bệnh viện, đánh giá công tâm, sắc sảo bằng tiếng Việt.', false);
+    const reply = await callAI(prompt, '', false, 'evaluate');
     c.evaluation = reply;
+    c.evaluationRated = 0;
     renderTreatmentTab();
-    await syncCaseToCloud(c);
+    scheduleSync(c, true);
     showToast('Đã hoàn thành tổng kết và chấm điểm ca bệnh!', 'success');
   } catch (err) {
     showToast('Lỗi chấm điểm: ' + err.message, 'error');
@@ -1747,7 +1927,7 @@ function renderBillingTab() {
   `;
 }
 
-/* ==================== NGĂN KÉO HỘI CHẨN & GỢI Ý AI ==================== */
+/* ==================== NGĂN KÉO HỘI CHẨN & GỢI Ý AI (CÓ BỐI CẢNH ĐẦY ĐỦ + ĐÁNH GIÁ 👍/👎) ==================== */
 function toggleDrawer(open) {
   const el = document.getElementById('aiDrawer');
   el.classList.toggle('translate-x-full', !open);
@@ -1763,9 +1943,19 @@ function renderChatHistory() {
     </div>`;
     return;
   }
-  box.innerHTML = c.chatHistory.map(m => `
+  box.innerHTML = c.chatHistory.map((m, idx) => `
     <div class="flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}">
-      <div class="max-w-[88%] rounded-xl px-3 py-2 text-xs whitespace-pre-wrap leading-relaxed ${m.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-slate-800'}">${esc(m.text)}</div>
+      <div class="max-w-[90%] rounded-xl px-3 py-2 text-xs leading-relaxed ${m.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-slate-800'}">
+        <div class="whitespace-pre-wrap">${esc(m.text)}</div>
+        ${m.role === 'ai' && m.text !== 'Đang suy nghĩ...' && !m.text.startsWith('Lỗi:') ? `
+          <div class="mt-2 pt-1.5 border-t border-slate-100 flex items-center gap-3 text-[10px] text-slate-500">
+            ${m.rated ? `<span class="font-semibold ${m.rated > 0 ? 'text-emerald-700' : 'text-rose-700'}">${m.rated > 0 ? '👍 Đã đánh giá hữu ích' : '👎 Đã gửi góp ý'}</span>` : `
+              <button onclick="rateAiOutput('ai_reply', 1, getActiveCase().chatHistory[${idx}].text, ${idx})" class="hover:text-emerald-600 font-medium">👍 Hữu ích</button>
+              <button onclick="rateAiOutput('ai_reply', -1, getActiveCase().chatHistory[${idx}].text, ${idx})" class="hover:text-rose-600 font-medium">👎 Chưa ổn</button>
+            `}
+          </div>
+        ` : ''}
+      </div>
     </div>
   `).join('');
   box.scrollTop = box.scrollHeight;
@@ -1792,32 +1982,42 @@ async function sendConsultMessage(e) {
 async function runConsultPrompt(userText, hintLevel) {
   const c = ensurePersonalEditableCase();
   if (!c.chatHistory) c.chatHistory = [];
+
+  // Lấy tối đa 6 tin nhắn hội chẩn gần nhất để AI giữ mạch trao đổi
+  const recentHistory = c.chatHistory.slice(-6)
+    .map(m => `${m.role === 'user' ? 'Học viên' : 'Bác sĩ Cố vấn'}: ${m.text}`)
+    .join('\n');
+
   c.chatHistory.push({ role: 'user', text: userText });
-  c.chatHistory.push({ role: 'ai', text: 'Đang suy nghĩ...' });
+  c.chatHistory.push({ role: 'ai', text: 'Đang suy nghĩ...', rated: 0 });
   renderChatHistory();
 
   const day = c.days[state.activeDayIndex];
   const rule = hintLevel === 1
-    ? 'CHỈ gợi ý định hướng bằng câu hỏi mở và các dấu hiệu cảnh báo cần chú ý. TUYỆT ĐỐI không nói thẳng chẩn đoán xác định hay tên thuốc.'
+    ? 'YÊU CẦU MỨC 1: Chỉ đặt câu hỏi gợi mở và nêu dấu hiệu cảnh báo cần chú ý. TUYỆT ĐỐI không nói thẳng chẩn đoán xác định hay tên thuốc.'
     : hintLevel === 2
-      ? 'Gợi ý các xét nghiệm/chẩn đoán hình ảnh then chốt cần ưu tiên làm và hướng phân biệt các nguyên nhân chính.'
+      ? 'YÊU CẦU MỨC 2: Gợi ý các cận lâm sàng then chốt cần ưu tiên và hướng phân biệt các nguyên nhân chính.'
       : hintLevel === 3
-        ? 'Hướng dẫn rõ nguyên tắc điều trị, nhóm thuốc chủ lực, dịch truyền và tiêu chuẩn theo dõi cho ca này.'
-        : 'Trả lời câu hỏi hội chẩn của bác sĩ điều trị ngắn gọn, thực tế và mang tính sư phạm.';
+        ? 'YÊU CẦU MỨC 3: Hướng dẫn rõ nguyên tắc điều trị, nhóm thuốc chủ lực, dịch truyền và tiêu chuẩn theo dõi.'
+        : 'Trả lời trực diện câu hỏi hội chẩn, đối chiếu với CLS và y lệnh hiện tại của học viên.';
 
-  const prompt = `Bối cảnh ca bệnh:
-- Đáp án nền: ${c.hiddenGroundTruth}
-- Bệnh nhân: ${c.patient.name}, ${c.patient.age} tuổi, ${c.patient.gender}
-- Ngày điều trị ${day.dayNumber}: ${day.progressNote} | Sinh hiệu: M ${day.vitals.pulse}, T ${day.vitals.temp}, HA ${day.vitals.bp}, SpO2 ${day.vitals.spo2}%
-- CLS đã có: ${day.labOrders.map(l => `${l.name}: ${l.result || 'chờ KQ'}`).join(' | ') || 'Chưa có'}
-- Câu hỏi của học viên: ${userText}
-- Yêu cầu sư phạm: ${rule}`;
+  const prompt = `BỐI CẢNH CA BỆNH:
+- Đáp án nền (dùng để dẫn dắt, tôn trọng quy tắc mức độ gợi ý): ${c.hiddenGroundTruth}
+- Bệnh nhân: ${c.patient.name}, ${c.patient.age} tuổi, ${c.patient.gender} (${c.patient.department})
+- Chẩn đoán sơ bộ học viên ghi: ${c.record.preliminaryDx || 'Chưa ghi'}
+- Ngày điều trị ${day.dayNumber}: ${day.progressNote}
+- Sinh hiệu: M ${day.vitals.pulse}, T ${day.vitals.temp}°C, HA ${day.vitals.bp}, NT ${day.vitals.rr}, SpO2 ${day.vitals.spo2}%
+- CLS đã chỉ định: ${day.labOrders.map(l => `${l.name} -> ${l.result || 'chờ KQ'}`).join(' | ') || 'Chưa có'}
+- Y lệnh thuốc/dịch truyền học viên ĐÃ kê ngày ${day.dayNumber}: ${day.drugOrders.map(d => `${d.name} (${d.route}, ${d.dose})`).join('; ') || 'Chưa kê thuốc'}
+${recentHistory ? `\nMẠCH HỘI CHẨN GẦN ĐÂY:\n${recentHistory}` : ''}
+
+CÂU HỎI HIỆN TẠI CỦA HỌC VIÊN: ${userText}`;
 
   try {
-    const reply = await callAI(prompt, 'Bạn là Bác sĩ Cố vấn lâm sàng giàu kinh nghiệm tại bệnh viện Việt Nam.', false);
+    const reply = await callAI(prompt, rule, false, 'consult');
     c.chatHistory[c.chatHistory.length - 1].text = reply;
     renderChatHistory();
-    await syncCaseToCloud(c);
+    scheduleSync(c, true);
   } catch (err) {
     c.chatHistory[c.chatHistory.length - 1].text = 'Lỗi: ' + err.message;
     renderChatHistory();
